@@ -5,7 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse
 
 
 class Scraper:
@@ -41,6 +41,9 @@ class Scraper:
                     print(href)
                 elif href.startswith('http') or href.startswith('https') and urlparse(href).netloc != self.base_domain:
                     continue
+                elif href == 'https://metta-lang.dev/docs/playground/playground.html' or href == 'https://metta-lang.dev/':
+                    continue
+
                 if href.startswith('http') and href not in self.visited_urls:
                     self.url_stack.append(href)
                     self.urls_to_scrape.append(href)
