@@ -13,60 +13,57 @@ class Scraper:
         self.url_stack = [url]
         self.base_url = url
         self.base_domain = urlparse(url).netloc
-        self.urls_to_scrape = list()
         self.visited_urls = list()
+        self.links = [url+'/issues', url+'/pulls',url+'/actions',url+'/projects',url+'/activity',url+'/security',url+'/commits', url+'/fork',url+'/actions',url+'/projects',url+'/actions',url+'/security',]
         self.soup = None
+
+    def driver(self, url):
+        web_driver = webdriver.Chrome()
+        web_driver.get(url)
+
+        WebDriverWait(web_driver, 10).until(
+            ec.presence_of_element_located((By.TAG_NAME, 'body'))
+        )
+
+        WebDriverWait(web_driver, 10).until(
+            ec.presence_of_element_located((By.CSS_SELECTOR, 'a'))
+        )
+
+        content = web_driver.page_source
+
+        web_driver.quit()
+
+        return content
 
     def find_all(self):
         for url in self.url_stack:
-            driver = webdriver.Chrome()
-            driver.get(url)
+            if url in self.visited_urls:
+                continue
 
-            WebDriverWait(driver, 10).until(
-                ec.presence_of_element_located((By.TAG_NAME, 'body'))
-            )
-
-            WebDriverWait(driver, 10).until(
-                ec.presence_of_element_located((By.CSS_SELECTOR, 'a'))
-            )
-
-            content = driver.page_source
+            content = self.driver(url)
 
             self.soup = BeautifulSoup(content, 'html.parser')
 
             for link in self.soup.find_all('a'):
                 href = link.get('href')
-                if href.startswith('/'):
-                    href = "https://metta-lang.dev" + href
-                    print(href)
+                if href.startswith('/trueagi-io/hyperon-experimental'):
+                    href = "https://github.com" + href
                 elif href.startswith('http') or href.startswith('https') and urlparse(href).netloc != self.base_domain:
-                    continue
-                elif href == 'https://metta-lang.dev/docs/playground/playground.html' or href == 'https://metta-lang.dev/':
                     continue
 
                 if href.startswith('http') and href not in self.visited_urls:
-                    self.url_stack.append(href)
-                    self.urls_to_scrape.append(href)
+                    with open('output2.txt', 'a', encoding='utf-8') as file:
+                        try:
+                            response = self.driver(href)
+                            soup = BeautifulSoup(response, 'html.parser')
+                            text = soup.get_text(strip=True)
+                            file.write(f"{text}\n")
+                        except Exception as e:
+                            print(f"Failed to scrape {url}: {e}")
                     self.visited_urls.append(href)
 
-            driver.quit()
             time.sleep(10)
 
-        for urlr in self.urls_to_scrape:
-            print(urlr)
 
-    def collect_data(self):
-        self.find_all()
-        with open('output.txt', 'a', encoding='utf-8') as file:
-            for url in self.urls_to_scrape:
-                try:
-                    response = requests.get(url)
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    text = soup.get_text(strip=True)
-                    file.write(f"URL: {url}\n{text}\n{'-'*80}\n")
-                except Exception as e:
-                    print(f"Failed to scrape {url}: {e}")
-
-
-scrape = Scraper("https://metta-lang.dev/docs/learn/learn.html")
-scrape.collect_data()
+scrape = Scraper("https://github.com/trueagi-io/hyperon-experimental/")
+scrape.find_all()
