@@ -77,6 +77,28 @@ class Scraper:
                                 li_text = li.get_text(separator=' ', strip=True)
                                 li.string = li_text
 
+                            for pre in soup.find_all('pre'):
+                                # Extract and concatenate all <code> tags' text within the <pre> tag
+                                code_texts = []
+                                for code in pre.find_all('code'):
+                                    # Extract text from all <span> tags within the <code> tag
+                                    span_texts = ' '.join(
+                                        span.get_text(separator=' ', strip=True) for span in code.find_all('span'))
+                                    code_texts.append(span_texts)
+
+                                # Concatenate all code texts into a single line
+                                concatenated_code_texts = ' '.join(code_texts)
+
+                                # Replace the <code> tags within the <pre> tag content with the concatenated code text
+                                for code in pre.find_all('code'):
+                                    code.replace_with('')
+
+                                # Get the text of the <pre> tag, excluding <code> tags
+                                pre_text = pre.get_text(separator=' ', strip=True)
+
+                                # Update the <pre> tag's content
+                                pre.string = f"{pre_text} {concatenated_code_texts}"
+
                             # Get the modified text of the whole document
                             text = soup.get_text(separator='\n', strip=True)
                             file.write(f"{text}\n")
