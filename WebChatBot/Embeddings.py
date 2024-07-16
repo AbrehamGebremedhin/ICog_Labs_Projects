@@ -260,3 +260,56 @@ class EmbeddingModel:
             print(f"Error inserting into MongoDB: {e}")
 
         return combined_embeddings
+
+    def nv_embed(self):
+        model = SentenceTransformer("nvidia/NV-Embed-v1", trust_remote_code=True)
+
+        all_embeddings = []
+        chunks = self.text_splitter.split_text(self.input)
+
+        print(f"Total chunks: {len(chunks)}")
+
+        total_time = 0
+
+        for chunk in chunks:
+            start_time = time.process_time()
+
+            with torch.no_grad():
+                # Encode the chunk using the model's encode method
+                embeddings = model.encode([chunk],max_length=self.chunk_size, device=self.device)
+
+            # Convert embeddings to a tensor and ensure it is on the correct device
+            embeddings = torch.tensor(embeddings).to(self.device)
+
+            # Normalize embeddings
+            embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+            all_embeddings.append(embeddings)
+
+            end_time = time.process_time()
+            total_time += end_time - start_time
+            print(f"Chunk processed in {end_time - start_time} seconds")
+
+        # Combine all embeddings
+        combined_embeddings = torch.cat(all_embeddings, dim=0).cpu()
+
+        try:
+            self.collection.insert_one(
+                {
+                    "model_id": "nvidia/NV-Embed-v1",
+                    "embeddings": combined_embeddings.tolist(),
+                    "process_time": total_time
+                }
+            )
+            print("Embeddings successfully inserted into MongoDB")
+        except Exception as e:
+            print(f"Error inserting into MongoDB: {e}")
+
+        return combined_embeddings
+
+
+with open("output.txt", "r", encoding="utf-8") as file:
+    content = file.read()
+
+
+embed = EmbeddingModel(content)
+embed.nv_embed()
