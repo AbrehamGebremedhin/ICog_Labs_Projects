@@ -1,13 +1,8 @@
 import time
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-from langchain_community.llms.huggingface_pipeline  import HuggingFacePipeline
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
-from langchain_core.documents import Document
 from langchain_postgres.vectorstores import PGVector
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.llms import Ollama
@@ -27,7 +22,7 @@ class Chat:
         self.llm = Ollama(model="phi3:mini")
 
     def load_data(self):
-        loader = PyPDFLoader(f"/MettaChatBot/metta.pdf", extract_images=False)
+        loader = PyPDFLoader(f"D:\\Projects\\ICog_Labs_Projects\\MettaChatBot\\metta.pdf", extract_images=False)
         pages = loader.load_and_split()
 
         # Split data into chunks
@@ -39,8 +34,10 @@ class Chat:
         )
         chunks = text_splitter.split_documents(pages)
 
-        db = Chroma.from_documents(chunks, embedding=self.embeddings, persist_directory="metta")
-        db.persist()
+        docs = []
+        for i in range(len(chunks)):
+            print(f"Processing chunk {i + 1}/{len(chunks)}")
+            # docs.append(Document(page_content=str(chunks[i]), metadata={"id": i}))
 
     def query_db(self, query):
         # Conduct a vector search for the user query and return the top 6 results
@@ -48,7 +45,7 @@ class Chat:
 
         # Custom prompt template suitable for the Phi-3 model
         qna_prompt_template = """<|system|> You have been provided with the context and a query, try to find out 
-        the answer to the question only using the context information. If the answer to the question is not found 
+        the answer to the question only using the context information, give the answer and an elaborate explanation to the answer. If the answer to the question is not found 
         within the context, return "I dont know" as the response. <|end|> <|user|> Context: {context}
 
         Query: {query}<|end|>
@@ -69,3 +66,7 @@ class Chat:
         answer = (answer.split("<|assistant|>")[-1]).strip()
 
         return answer
+
+
+chat = Chat()
+chat.load_data()
