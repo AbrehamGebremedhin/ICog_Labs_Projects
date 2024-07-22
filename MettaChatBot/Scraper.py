@@ -57,6 +57,7 @@ class Scraper:
             # Find all anchor tags to process the links
             for link in self.soup.find_all('a'):
                 href = link.get('href')
+                title = link.text
                 # Prefix relative URLs with the base URL
                 if href.startswith('/'):
                     href = "https://metta-lang.dev" + href
@@ -115,7 +116,7 @@ class Scraper:
                             # Loop through and print each <li> tag
                             for li in li_tags:
                                 keywords.append(li.text)
-                        data.append({"URL": href, "Text": text, "Keywords": keywords})
+                        data.append({"URL": href, "Text": text, 'Title': title, "Keywords": keywords})
 
                     except Exception as e:
                         # Log any exceptions encountered during processing

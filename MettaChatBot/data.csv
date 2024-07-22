@@ -1,4 +1,32 @@
-URL,Text,Keywords
+URL,Text,Title,Keywords
+https://metta-lang.dev/,"Multiparadigmality
+MeTTa programs organically combine elements of functional, logical and probabilistic programming providing a synergetic framework for representing declarative and procedural knowledge.
+
+Atomspace
+Each MeTTa program is represented as a subgraph of an Atomspace metagraph, and operates centrally by querying and rewriting portions of Atomspaces.
+
+Self-modification
+MeTTa handles highly abstract constructs like run-time self-modifying code simply and naturally. Programs are fully self-reflective – we can read/modify the code inside the programs.
+
+Gradual dependent types
+Type system is one of the most important features in terms of application of MeTTa language. Built-in mathematical reasoning by supporting a state-of-the-art type system.
+
+Neural-symbolic integration
+MeTTa is capable to support neural-symbolic reasoning and handling uncertainties, using probabilistic logical reasoning.
+
+Inference engine
+MeTTa is essentially nondeterministic that turns its interpreter into an inference engine. The language supports implementing different inference systems, from probabilistic programming to fuzzy logic.
+
+Tool for AGI
+With its open architecture MeTTa embraces very different AI strategies and is intended both for humans to script portions of AGI cognitive processes, and for the programming activity of AGI-related learning and reasoning algorithms themselves.
+
+DSL for AI DSLs
+MeTTa forms the ‘universal translator’ that enables a wide range of AI systems to dynamically collaborate by the creation of compatible Domain Specific Languages within one framework.
+
+OpenCog Hyperon
+MeTTa is the language of the cognitive architecture of OpenCog Hyperon. It functions as the firmware of the wildly variating components that Hyperon is made of and it is the glue that holds everything together.","MeTTa Language
+
+","Multiparadigmality, Atomspace,Self-modification, Gradual dependent types, Neural-symbolic integration, Inference engine,Tool for AGI, DSL for AI DSLs,OpenCog Hyperon"
 https://metta-lang.dev/docs/learn/learn.html,"Learn MeTTa
 ​
 Tutorials available
@@ -9,7 +37,7 @@ Basics of Types and Metatypes
 Stdlib overview
 Basics of Functional Pragramming in MeTTa
 Using MeTTa from Python
-Metta-Motto",['Tutorials available']
+Metta-Motto",Learn,Tutorials available
 https://metta-lang.dev/docs/learn/tutorials/eval_intro/intro.html,"Introduction to evaluation in MeTTa
 ​
 Table of Contents
@@ -17,7 +45,7 @@ Table of Contents
 Main Concepts
 Basic Evaluation
 Recursion and control
-Free variables and nondeterminism again, recursively",['Table of Contents']
+Free variables and nondeterminism again, recursively",Introduction to Evaluation in MeTTa,Table of Contents
 https://metta-lang.dev/docs/learn/tutorials/eval_intro/main_concepts.html,"Main concepts
 ​
 Atoms and knowledge graphs
@@ -72,7 +100,7 @@ These atoms are of
 Symbol
 metatype, and do not refer to particular binary objects unlike
 Grounded
-atoms, but they are processed by the interpreter in a special way.","['Atoms and knowledge graphs', 'Atom kinds and types', 'Special symbols']"
+atoms, but they are processed by the interpreter in a special way.",Main concepts,"Atoms and knowledge graphs, Atom kinds and types, Special symbols"
 https://metta-lang.dev/docs/learn/tutorials/eval_intro/basic_evaluation.html,"Basic evaluation
 ​
 MeTTa programs
@@ -201,7 +229,7 @@ in its body is evaluated independently. Deterministic
 sum
 simply processes each nondeterministic value of its argument, while
 inc-flip
-doubles the number of input values.","['MeTTa programs', 'Equalities', 'Evaluation chaining']"
+doubles the number of input values.",Basic evaluation,"MeTTa programs, Equalities, Evaluation chaining"
 https://metta-lang.dev/docs/learn/tutorials/eval_intro/recursion.html,"Recursion and control
 ​
 Basic recursion
@@ -322,7 +350,7 @@ case
 here could be more convenient:
 metta
 ( = ( zip $ list1 $ list2 ) ( = ( zip $ list1 $ list2 ) ( case ( $ list1 $ list2 ) ( case ( $ list1 $ list2 ) (((() ()) ()) (((() ()) ()) ((( :: $ x $ xs ) ( :: $ y $ ys )) ( :: ( $ x $ y ) ( zip $ xs $ ys ))) ((( :: $ x $ xs ) ( :: $ y $ ys )) ( :: ( $ x $ y ) ( zip $ xs $ ys ))) ( $ else ERROR ) ( $ else ERROR ) ) ) ) ) ) ) ! ( zip ( :: A ( :: B ())) ( :: 1 ( :: 2 ()))) ; (:: (A 1) (:: (B 2) ())) ! ( zip ( :: A ( :: B ())) ( :: 1 ( :: 2 ()))) ; (:: (A 1) (:: (B 2) ())) ! ( zip ( :: A ( :: B ())) ( :: 1 ())) ; (:: (A 1) ERROR) ! ( zip ( :: A ( :: B ())) ( :: 1 ())) ; (:: (A 1) ERROR)
-Run","['Basic recursion', 'Higher order functions', 'Conditional statements']"
+Run",Recursion and control,"Basic recursion, Higher order functions, Conditional statements"
 https://metta-lang.dev/docs/learn/tutorials/eval_intro/recursion_vars.html,"Free variables and nondeterminism again, recursively
 ​
 A piece of logic
@@ -429,14 +457,7 @@ This solution is not scalable, but it illustrates the general idea of how nondet
 (gen-bin-list (task))
 will not work here. What is the difference with the
 frog
-example? The answer will be given in the next tutorial.","['A piece of logic', 'Recursion with nondeterminism', 'Solving problems with recursive nondeterminism']"
-https://metta-lang.dev/docs/learn/tutorials/ground_up/intro.html,"MeTTa from Ground Up: Patterns of Knowledge
-​
-Table of Contents
-​
-Querying space content
-Functions and unification
-Nested queries and recursive graph traversal",['Table of Contents']
+example? The answer will be given in the next tutorial.",Free variables and nondeterminism,"A piece of logic, Recursion with nondeterminism, Solving problems with recursive nondeterminism"
 https://metta-lang.dev/docs/learn/tutorials/ground_up/query_knowledge.html,"Querying space content
 ​
 Introduction
@@ -532,7 +553,7 @@ Copied
 Reset
 The output should contain the following pairs (the order can be different due to MeTTa's nondeterminism)
 [(Pat Bob), (Bob Ann), (Bob Pat), (Tom Bob), (Tom Liz), (Pat Pat)]
-. Can you add the query in the above program to retrieve only parents and children with same names?","['Introduction', 'Knowledge declaration and matching query', 'Basic examples']"
+. Can you add the query in the above program to retrieve only parents and children with same names?",Querying space content,"Introduction, Knowledge declaration and matching query, Basic examples"
 https://metta-lang.dev/docs/learn/tutorials/ground_up/unify_func.html,"Functions and unification
 ​
 Function evaluation and matching
@@ -693,7 +714,7 @@ Query (= (Child Ann Bob) $result) (Child Ann Bob) finds no matches, so (= (Child
 The overall chain of transformations in the course of interpretation can be viewed as:
 metta
 1. ( conclude ( Parent Bob $ y )) 1. ( conclude ( Parent Bob $ y )) 2. ( match &self ( Implies ( Parent Bob $ y ) $ B ) 2. ( match &self ( Implies ( Parent Bob $ y ) $ B ) ( match &self ( Parent Bob $ y ) $ B )) ( match &self ( Parent Bob $ y ) $ B )) 3. ( match &self ( Parent Bob $ y ) ( Child $ y Bob )) 3. ( match &self ( Parent Bob $ y ) ( Child $ y Bob )) 4. ( Child Ann Bob ) 4. ( Child Ann Bob )
-These are not all the steps done by the interpreter, but they give the overall picture of what is really going on under the hood.","['Function evaluation and matching', 'From facts to rules', 'Unification', 'Chained unification']"
+These are not all the steps done by the interpreter, but they give the overall picture of what is really going on under the hood.",Functions and unification,"Function evaluation and matching, From facts to rules, Unification, Chained unification"
 https://metta-lang.dev/docs/learn/tutorials/ground_up/nested_queries.html,"Nested queries and recursive graph traversal
 ​
 Composite queries
@@ -759,15 +780,7 @@ For any `$x` and `$z`: `$x` is a predecessor of `$z`
 Recursion is a convenient way to represent such relations.
 metta
 ( Parent Tom Bob ) ( Parent Tom Bob ) ( Parent Pam Bob ) ( Parent Pam Bob ) ( Parent Tom Liz ) ( Parent Tom Liz ) ( Parent Bob Ann ) ( Parent Bob Ann ) ( Parent Bob Pat ) ( Parent Bob Pat ) ( Parent Pat Jim ) ( Parent Pat Jim ) ( Parent Jim Lil ) ( Parent Jim Lil )  ( = ( parent $ x $ y ) ( match &self ( Parent $ x $ y ) $ x )) ( = ( parent $ x $ y ) ( match &self ( Parent $ x $ y ) $ x )) ( = ( predecessor $ x $ z ) ( parent $ x $ z )) ( = ( predecessor $ x $ z ) ( parent $ x $ z )) ( = ( predecessor $ x $ z ) ( predecessor $ x ( parent $ y $ z ))) ( = ( predecessor $ x $ z ) ( predecessor $ x ( parent $ y $ z ))) ; Who are predecessors of Lil ; Who are predecessors of Lil ! ( predecessor $ x Lil ) ! ( predecessor $ x Lil )
-Run","['Composite queries', 'Recursion for graph traversal']"
-https://metta-lang.dev/docs/learn/tutorials/types_basics/intro.html,"Basics of Types and Metatypes
-​
-Table of Contents
-​
-Concrete types
-Recursive and parametric types
-Metatypes and evaluation order
-Controlling pattern matching",['Table of Contents']
+Run",Nested queries,"Composite queries, Recursion for graph traversal"
 https://metta-lang.dev/docs/learn/tutorials/types_basics/atom_types.html,"Concrete types
 ​
 Types of symbols
@@ -1027,7 +1040,7 @@ metta
 Run
 In this program, we also tried to see the type of application of the grounded function to the argument of
 %Undefined%
-type. Such the expression type-checks. However, it is not reduced in the course of evaluation. Thus, grounded functions work as partial functions or expression constructors in such cases. MeTTa is a symbolic language, and the possibility to construct expressions for further analysis is one of its main features. Ultimately, grounded functions should not differ from symbolically defined functions in this regard.","['Types of symbols', 'Types of expressions', 'Type-checking', 'Gradual typing', 'Multiple arguments', 'Nested expressions', 'Grounded atoms']"
+type. Such the expression type-checks. However, it is not reduced in the course of evaluation. Thus, grounded functions work as partial functions or expression constructors in such cases. MeTTa is a symbolic language, and the possibility to construct expressions for further analysis is one of its main features. Ultimately, grounded functions should not differ from symbolically defined functions in this regard.",Concrete types,"Types of symbols, Types of expressions, Type-checking, Gradual typing, Multiple arguments, Nested expressions, Grounded atoms"
 https://metta-lang.dev/docs/learn/tutorials/types_basics/parametric_types.html,"Recursive and parametric types
 ​
 Recursive data types
@@ -1239,7 +1252,7 @@ Functional programming with types is discussed in more detail in
 this tutorial
 . However, types in MeTTa are more general than generalized algebraic data types and are similar to dependent types. The use of such advanced types is elaborated in
 this tutorial
-, in particular, in application to knowledge representation and reasoning.","['Recursive data types', 'Parametric types']"
+, in particular, in application to knowledge representation and reasoning.",Recursive and parametric types,"Recursive data types, Parametric types"
 https://metta-lang.dev/docs/learn/tutorials/types_basics/metatypes.html,"Metatypes
 ​
 Peeking into metatypes
@@ -1414,7 +1427,7 @@ Atom
 type is comparing expressions
 metta
 ; `atom-eq` returns True, when arguments are identical ; `atom-eq` returns True, when arguments are identical ; (can be unified with the same variable) ; (can be unified with the same variable) ( : atom-eq ( -> Atom Atom Bool )) ( : atom-eq ( -> Atom Atom Bool )) ( = ( atom-eq $ x $ x ) True ) ( = ( atom-eq $ x $ x ) True )  ; These expressions are identical: ; These expressions are identical: ! ( atom-eq ( + 1 2 ) ( + 1 2 )) ! ( atom-eq ( + 1 2 ) ( + 1 2 ))  ; the following will not be reduced because the expressions are not the same ; the following will not be reduced because the expressions are not the same ; (even though the result of their evaluation would be) ; (even though the result of their evaluation would be) ! ( atom-eq 3 ( + 1 2 )) ! ( atom-eq 3 ( + 1 2 ))
-Run","['Peeking into metatypes', 'Quoting MeTTa code', 'if under the hood', 'Transforming expressions']"
+Run",Metatypes and evaluation order,"Peeking into metatypes, Quoting MeTTa code, if under the hood, Transforming expressions"
 https://metta-lang.dev/docs/learn/tutorials/types_basics/match_control.html,"Controlling pattern matching
 ​
 Both standard and custom functions in MeTTa can have
@@ -1673,18 +1686,7 @@ atom into the current Space using the
 add-atom
 function and then calls another function which returns a message to notify the user about the new task. Please, notice the type signature of
 add-atom
-.","['Type signature of the match function', 'in-and-out behavior of match', 'Patterns are not type-checked', 'Type of =', ""let's evaluate"", 'Unit type']"
-https://metta-lang.dev/docs/learn/tutorials/stdlib_overview/intro.html,"Standard Library Overview
-​
-In this section we will look at the main functions of the standard library, which are part of the standard distribution of MeTTa.
-Table of Contents
-​
-Basic grounded functions
-Console output and debugging
-Handling nondeterministic results
-Working with spaces
-Control flow
-Operations over atoms",['Table of Contents']
+.",Controlling pattern matching,"Type signature of the match function, 'in-and-out behavior of match', Patterns are not type-checked, 'Type of =', ""let's evaluate"", Unit type"
 https://metta-lang.dev/docs/learn/tutorials/stdlib_overview/basic_grounded_functions.html,"Basic grounded functions
 ​
 Arithmetic operators and
@@ -1794,7 +1796,7 @@ and
 for unary and binary cases.
 metta
 ; Test if both the given expressions are True ; Test if both the given expressions are True ! ( and ( > 4 2 ) ( == ""This is a string"" ""Just a string"" )) ; False ! ( and ( > 4 2 ) ( == ""This is a string"" ""Just a string"" )) ; False  ; Test if any of the given expressions is True ; Test if any of the given expressions is True ! ( or ( > 4 2 ) ( == ""This is a string"" ""Just a string"" )) ; True ! ( or ( > 4 2 ) ( == ""This is a string"" ""Just a string"" )) ; True  ; Negates the result of a given Bool value ; Negates the result of a given Bool value ! ( not ( == 5 5 )) ; False ! ( not ( == 5 5 )) ; False ! ( not ( and ( > 4 2 ) ( < 4 3 ))) ; True ! ( not ( and ( > 4 2 ) ( < 4 3 ))) ; True
-Run","['Arithmetic operators and Number type', 'Comparison operations', 'Logical operations and Bool type']"
+Run",Basic grounded functions,"Arithmetic operators and Number type, Comparison operations, Logical operations and Bool type"
 https://metta-lang.dev/docs/learn/tutorials/stdlib_overview/console_output.html,"Console output and debugging
 ​
 All values obtained during evaluation of the MeTTa program or script are collected and returned. The whole program can be treated as a function. If a stand-alone program is executed via
@@ -2002,7 +2004,7 @@ Run
 Let us notice a few things:
 We have to take the result into brackets, e.g., (assertEqualToResult (+ 1 2) (3)) (assertEqual (+ 1 2) 3) assertEqualToResult vs (assertEqualToResult (+ 1 2) (3)) (assertEqual (+ 1 2) 3) assertEqualToResult , because the second argument of (assertEqualToResult (+ 1 2) (3)) (assertEqual (+ 1 2) 3) assertEqualToResult is a set of results even if this set contains one element.
 As a consequence, a non-reducible expression also gets additional brackets as the second argument, e.g., ((+ 1 untyped-symbol)) . It is also a one-element set of the results.
-The second argument is indeed not evaluated. The last assert yields an error, because (+ 1 2) 3 3 (+ 1 2) is reduced to (+ 1 2) 3 3 (+ 1 2) . Notice (+ 1 2) 3 3 (+ 1 2) as what we got instead of expected (for the sake of the example) (+ 1 2) 3 3 (+ 1 2) .","['Print a line', 'Trace log', 'Quote', 'Asserts']"
+The second argument is indeed not evaluated. The last assert yields an error, because (+ 1 2) 3 3 (+ 1 2) is reduced to (+ 1 2) 3 3 (+ 1 2) . Notice (+ 1 2) 3 3 (+ 1 2) as what we got instead of expected (for the sake of the example) (+ 1 2) 3 3 (+ 1 2) .",Console output and debugging,"Print a line, Trace log, Quote, Asserts"
 https://metta-lang.dev/docs/learn/tutorials/stdlib_overview/superpose_collapse.html,"Handling nondeterministic results
 ​
 Superpose
@@ -2185,7 +2187,7 @@ collapse
 collapse
 to be called separately for each nondeterministic branch produced by superpose instead of collecting these branches inside
 collapse
-.","['Superpose', 'Empty', 'Collapse']"
+.",Handling nondeterministic results,"Superpose, Empty, Collapse"
 https://metta-lang.dev/docs/learn/tutorials/stdlib_overview/working_with_spaces.html,"Working with spaces
 ​
 Space API
@@ -2466,7 +2468,7 @@ mod-space!
 returns the space of the module (and tries to load the module if it is not loaded into the module system). Thus, we can explore the module space explicitly.
 metta
 ! ( mod-space! stdlib ) ! ( mod-space! stdlib ) ! ( match ( mod-space! stdlib ) ! ( match ( mod-space! stdlib ) ( = ( if $ cond $ then $ else ) $ result ) ( = ( if $ cond $ then $ else ) $ result ) ( quote ( = ( if $ cond $ then $ else ) $ result )) ( quote ( = ( if $ cond $ then $ else ) $ result )) ) )
-Run","['Space API', 'Adding atoms', 'Removing atoms', 'New spaces', 'Creating tokens', 'Imports']"
+Run",Working with spaces,"Space API, Adding atoms, Removing atoms, New spaces, Creating tokens, Imports"
 https://metta-lang.dev/docs/learn/tutorials/stdlib_overview/control_flow.html,"Control flow
 ​
 MeTTa has several specific constructs that allow a program to execute different parts of code based either on pattern matching or logical conditions.
@@ -2701,7 +2703,7 @@ One could also write a function, which checks if the first player wins, and use 
 ($x $y)
 and
 ($y $x)
-). This could be more scalable for game extensions with additional gestures, and could be more robust to unexpected inputs (although this should be better handled with types). You can try experimenting with different approaches using the sandbox above.","['if', 'let', 'let*', 'case']"
+). This could be more scalable for game extensions with additional gestures, and could be more robust to unexpected inputs (although this should be better handled with types). You can try experimenting with different approaches using the sandbox above.",Control flow,"if', 'let', 'let*', 'case'"
 https://metta-lang.dev/docs/learn/tutorials/stdlib_overview/atoms_ops.html,"Operations over atoms
 ​
 Stdlib contains operations to construct and deconstruct atoms as instances of
@@ -2815,14 +2817,7 @@ to-list
 (True False)
 is also converted to the list now. It happens because the head of the current tuple is also passed to
 to-tree
-. For this to work, we need to analyze if the argument is an expression. If it is not, the value is not transformed.","['Deconstructing expressions', 'Constructing expressions', 'Comparison with custom data constructors', 'Typical usage']"
-https://metta-lang.dev/docs/learn/tutorials/python_use/intro.html,"Using MeTTa from Python
-​
-Table of Contents
-​
-Running MeTTa in Python
-Parsing grounded atoms
-Embedding Python objects into MeTTa",['Table of Contents']
+. For this to work, we need to analyze if the argument is an expression. If it is not, the value is not transformed.",Operations over atoms,"Deconstructing expressions, Constructing expressions, Comparison with custom data constructors, Typical usage"
 https://metta-lang.dev/docs/learn/tutorials/python_use/metta_python_basics.html,"Running MeTTa in Python
 ​
 Introduction
@@ -3142,7 +3137,7 @@ ValueAtom(42)
 can be matched against
 42
 appeared in the MeTTa program (although it is not recommended to use grounded atoms as keys for querying).
-Apparently, there is a textual representation of grounded atoms, from which atoms themselves are built by the parser. But is it possible to introduce such textual representations for custom grounded atoms, so we could refer to them in the textual program code? The answer is yes. The Python and MeTTa API for this is described on the next page.","['Introduction', 'Setup', 'MeTTa runner class', 'Parsing MeTTa code', 'Accessing the program Space', 'MeTTa atoms in Python']"
+Apparently, there is a textual representation of grounded atoms, from which atoms themselves are built by the parser. But is it possible to introduce such textual representations for custom grounded atoms, so we could refer to them in the textual program code? The answer is yes. The Python and MeTTa API for this is described on the next page.",Running MeTTa in Python,"Introduction, Setup, MeTTa runner class, Parsing MeTTa code, Accessing the program Space, MeTTa atoms in Python"
 https://metta-lang.dev/docs/learn/tutorials/python_use/tokenizer.html,"Parsing grounded atoms
 ​
 Tokenizer
@@ -3282,7 +3277,7 @@ module, which can be inconvenient for purely Python functions. Thus, this settin
 bind!
 takes an atom to be bound to a token.
 parse
-takes a string and return an atom of any metatype constructed by parsing this string. One can imagine different custom operations, which accept and return atoms. Say, if a crossover operation in genetic algorithms would be implemented as a grounded operation, it would accept two atoms (typically, expressions), traverse them to find crossover points, and construct a child expression.","['Tokenizer', 'evaluate_atom', 'Creating new tokens', 'Parsing and interpretation', 'Kwargs for OperationAtom', 'Unwrapping Python objects from atoms']"
+takes a string and return an atom of any metatype constructed by parsing this string. One can imagine different custom operations, which accept and return atoms. Say, if a crossover operation in genetic algorithms would be implemented as a grounded operation, it would accept two atoms (typically, expressions), traverse them to find crossover points, and construct a child expression.",Parsing grounded atoms,"Tokenizer, evaluate_atom, Creating new tokens, Parsing and interpretation, Kwargs for OperationAtom, Unwrapping Python objects from atoms"
 https://metta-lang.dev/docs/learn/tutorials/python_use/py_atom.html,"Embedding Python objects into MeTTa
 ​
 py-atom
@@ -3475,7 +3470,7 @@ py-tuple
 independently - not just as function arguments:
 metta
 ! ( py-dict (( ""a"" ""b"" ) ( ""b"" ""c"" ))) ; creates a dict {""a"":""b"", ""b"":""c""} ! ( py-dict (( ""a"" ""b"" ) ( ""b"" ""c"" ))) ; creates a dict {""a"":""b"", ""b"":""c""} ! ( py-tuple ( 1 5 )) ; creates a tuple (1, 5) ! ( py-tuple ( 1 5 )) ; creates a tuple (1, 5) ! ( py-list ( 1 ( 2 ( 3 ""3"" )))) ; creates a nested list [1, [2, [3, '3']]] ! ( py-list ( 1 ( 2 ( 3 ""3"" )))) ; creates a nested list [1, [2, [3, '3']]]
-Run","['py-atom', 'py-dot', 'py-list, py-tuple, py-dict']"
+Run",Embedding Python objects into MeTTa,"py-atom, py-dot, py-list, py-tuple, py-dict"
 https://metta-lang.dev/docs/learn/tutorials/metta-motto/metta-motto.html,"MeTTa-Motto
 ​
 MeTTa-Motto
@@ -3824,8 +3819,4 @@ gpt-4o
 is_stream
 is set to
 True
-, the response is returned incrementally in chunks through an event stream. In Python, you can iterate over these events using a for loop.","['Simple queries to LLMs', 'MeTTa agents', 'Functional calls', 'Streaming', 'Scripts', 'dialog-agent', 'Retrieval Agent', 'LangChain Agents', 'Advantages of MeTTa-Motto']"
-https://metta-lang.dev/docs/learn/tutorials/func_prog/intro.html,"Basics of Functional Pragramming in MeTTa
-​
-Coming Soon
-​",['Coming Soon']
+, the response is returned incrementally in chunks through an event stream. In Python, you can iterate over these events using a for loop.",MeTTa-Motto,"Simple queries to LLMs, MeTTa agents, Functional calls, Streaming, Scripts, dialog-agent, Retrieval Agent, LangChain Agents, Advantages of MeTTa-Motto"
