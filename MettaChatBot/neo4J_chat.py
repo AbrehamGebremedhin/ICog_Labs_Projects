@@ -37,7 +37,8 @@ class Neo4JChat:
                     "text": str(row["Text"]),
                     "url": row["URL"],
                     "title": row["Title"],
-                    "keywords": row["Keywords"].split(',')  # Assuming keywords are comma-separated
+                    # Assuming keywords are comma-separated
+                    "keywords": row["Keywords"].split(',')
                 }
             )
 
@@ -112,9 +113,11 @@ class Neo4JChat:
                 keyword = keyword.strip()
                 keyword_embedding = self.embed_text(keyword)
                 print(f"Creating `:Keyword` node for keyword {keyword}")
-                self.kg.query(merge_keyword_node_query, params={'keyword': keyword, 'embedding': keyword_embedding})
+                self.kg.query(merge_keyword_node_query, params={
+                              'keyword': keyword, 'embedding': keyword_embedding})
 
-                print(f"Creating relationship for chunk ID {doc['id']} to keyword {keyword}")
+                print(f"Creating relationship for chunk ID {
+                      doc['id']} to keyword {keyword}")
                 self.kg.query(create_relationship_query, params={
                     'chunkId': doc['id'],
                     'entity': keyword,
@@ -125,9 +128,11 @@ class Neo4JChat:
             # Handle URLs
             url_embedding = self.embed_text(doc['url'])
             print(f"Creating `:URL` node for URL {doc['url']}")
-            self.kg.query(merge_url_node_query, params={'url': doc['url'], 'embedding': url_embedding})
+            self.kg.query(merge_url_node_query, params={
+                          'url': doc['url'], 'embedding': url_embedding})
 
-            print(f"Creating relationship for chunk ID {doc['id']} to URL {doc['url']}")
+            print(f"Creating relationship for chunk ID {
+                  doc['id']} to URL {doc['url']}")
             self.kg.query(create_relationship_query, params={
                 'chunkId': doc['id'],
                 'entity': doc['url'],
@@ -138,9 +143,11 @@ class Neo4JChat:
             # Handle titles
             title_embedding = self.embed_text(doc['title'])
             print(f"Creating `:Title` node for title {doc['title']}")
-            self.kg.query(merge_title_node_query, params={'title': doc['title'], 'embedding': title_embedding})
+            self.kg.query(merge_title_node_query, params={
+                          'title': doc['title'], 'embedding': title_embedding})
 
-            print(f"Creating relationship for chunk ID {doc['id']} to title {doc['title']}")
+            print(f"Creating relationship for chunk ID {
+                  doc['id']} to title {doc['title']}")
             self.kg.query(create_relationship_query, params={
                 'chunkId': doc['id'],
                 'entity': doc['title'],
@@ -161,10 +168,11 @@ class Neo4JChat:
                 WITH chunk, gds.similarity.cosine(chunk.Embedding, $queryEmbedding) AS similarity
                 RETURN chunk, similarity
                 ORDER BY similarity DESC
-                LIMIT 2
+                LIMIT 4
             """
 
-        results = self.kg.query(search_query, params={'queryEmbedding': query_embedding})
+        results = self.kg.query(search_query, params={
+                                'queryEmbedding': query_embedding})
 
         # Extract relevant information from the results
         response = []

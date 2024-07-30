@@ -15,7 +15,8 @@ client = MongoClient("mongodb://localhost:27017/")
 
 class Chat:
     def __init__(self, db='vec_db', model='phi3:mini'):
-        self.connection = "postgresql+psycopg://langchain:langchain@localhost:6024/langchain"  # Uses psycopg3!
+        # Uses psycopg3!
+        self.connection = "postgresql+psycopg://langchain:langchain@localhost:6024/langchain"
         self.name = "metta"
         self.embeddings = OllamaEmbeddings(model="nomic-embed-text")
         self.vectorstore = PGVector(
@@ -40,11 +41,13 @@ class Chat:
             docs.append(
                 Document(
                     page_content=str(row["Text"]),
-                    metadata={"id": index, "url": row["URL"], "title": row["Title"], "keywords": row["Keywords"]},
+                    metadata={
+                        "id": index, "url": row["URL"], "title": row["Title"], "keywords": row["Keywords"]},
                 )
             )
 
-        self.vectorstore.add_documents(docs, ids=[doc.metadata["id"] for doc in docs])
+        self.vectorstore.add_documents(
+            docs, ids=[doc.metadata["id"] for doc in docs])
 
     def query_db(self, query):
         if self.db == 'vec_db':
@@ -55,7 +58,7 @@ class Chat:
 
         # Custom prompt template suitable for the Phi-3 model
         qna_prompt_template = """<|system|> You have been provided with the context and a query, try to find out
-        the answer to the question only using the context information, and give the answer. If the answer to the question is not found
+        the answer to the question only using the context information, and give answer. If the answer to the question is not found
         within the context, return "I dont know" as the response. <|end|> <|user|> Context: {context}
 
         Query: {query}<|end|>
@@ -70,7 +73,8 @@ class Chat:
         chain = load_qa_chain(self.llm, chain_type="stuff", prompt=prompt)
 
         # Invoke the chain with the context and query
-        answer = (chain.invoke({"input_documents": context, "query": query}, return_only_outputs=True, ))['output_text']
+        answer = (chain.invoke(
+            {"input_documents": context, "query": query}, return_only_outputs=True, ))['output_text']
 
         # Extract the answer from the response
         answer = (answer.split("<|assistant|>")[-1]).strip()
@@ -82,5 +86,5 @@ class Chat:
         return answer
 
 
-chat = Chat("neo4j", model="llama3")
-print(chat.query_db("what is the main use of metta"))
+chat = Chat("neo4j", model='llama3.1')
+print(chat.query_db("create custom 'List' data structure in metta"))
