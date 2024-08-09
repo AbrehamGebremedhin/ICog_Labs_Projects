@@ -5,22 +5,49 @@ from langchain_community.graphs import Neo4jGraph
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_core.documents import Document
 from pathlib import Path
+import logging
 
+# Load environment variables
 load_dotenv(Path(__file__).resolve().parents[1] / 'config.env')
+
+# Initialize logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class Neo4JChat:
     def __init__(self):
+        self.embedder = OllamaEmbeddings(model="nomic-embed-text")
         self.NEO4J_URI = os.getenv('NEO4J_URI')
-        self.AUTH = (os.getenv('NEO4J_USERNAME'), os.getenv('NEO4J_PASSWORD'))
         self.NEO4J_USERNAME = os.getenv('NEO4J_USERNAME')
         self.NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')
-        self.NEO4J_DATABASE = os.getenv('NEO4J_DATABASE') or 'neo4j'
+        if not self.NEO4J_URI or not self.NEO4J_USERNAME or not self.NEO4J_PASSWORD:
+            raise ValueError(
+                "Missing one or more environment variables for Neo4j connection.")
 
-        self.embedder = OllamaEmbeddings(model="nomic-embed-text")
         self.kg = Neo4jGraph(
-            url=self.NEO4J_URI, username=self.NEO4J_USERNAME, password=self.NEO4J_PASSWORD, database=self.NEO4J_DATABASE
-        )
+            self.NEO4J_URI, username=self.NEO4J_USERNAME, password=self.NEO4J_PASSWORD)
+        self.verify_connection()
+
+    def verify_connection(self):
+        try:
+            self.kg.query("RETURN 1")
+            logging.info("Successfully connected to the Neo4j database.")
+        except Exception as e:
+            logging.error(f"Failed to connect to the Neo4j database: {e}")
+            if "DatabaseNotFound" in str(e):
+                logging.info("Attempting to connect to the default database.")
+                self.kg = Neo4jGraph(
+                    url=self.NEO4J_URI, username=self.NEO4J_USERNAME, password=self.NEO4J_PASSWORD, database="neo4j"
+                )
+                try:
+                    self.kg.query("RETURN 1")
+                    logging.info(
+                        "Successfully connected to the default Neo4j database.")
+                except Exception as fallback_e:
+                    logging.error(
+                        f"Failed to connect to the default Neo4j database: {fallback_e}")
+                    raise
 
     def embed_text(self, text):
         return self.embedder.embed_query(text)
@@ -30,72 +57,45 @@ class Neo4JChat:
 
         docs = []
         for index, row in df.iterrows():
-            print(f"Processing chunk {index + 1}/{len(df)}")
+            logging.info(f"Processing chunk {index + 1}/{len(df)}")
             docs.append(
                 {
-                    "id": index,
+                    "chunkId": index,  # Changed 'id' to 'chunkId'
                     "text": str(row["Text"]),
                     "url": row["URL"],
                     "title": row["Title"],
-                    # Assuming keywords are comma-separated
-                    "keywords": row["Keywords"].split(',')
+                    "keywords": [kw.strip() for kw in row["Keywords"].split(',')]
                 }
             )
 
-        merge_chunk_node_query = """
-        MERGE (mergedChunk:Chunk {chunkId: $chunkParam.id})
-        ON CREATE SET 
-            mergedChunk.URL = $chunkParam.url,
-            mergedChunk.Text = $chunkParam.text, 
-            mergedChunk.Title = $chunkParam.title, 
-            mergedChunk.Keywords = $chunkParam.keywords,
-            mergedChunk.Embedding = $chunkParam.embedding
-        RETURN mergedChunk
-        """
+        merge_queries = {
+            "chunk": """
+                MERGE (chunk:Chunk {chunkId: $chunkId})
+                ON CREATE SET 
+                    chunk.url = $url,
+                    chunk.text = $text, 
+                    chunk.title = $title, 
+                    chunk.keywords = $keywords,
+                    chunk.embedding = $embedding
+            """,
+            "entity": """
+                MERGE (entity:Entity {name: $name})
+                ON CREATE SET entity.embedding = $embedding
+            """,
+            "relationship": """
+                MATCH (chunk:Chunk {chunkId: $chunkId}), (entity:Entity {name: $entityName})
+                MERGE (chunk)-[rel:RELATIONSHIP_TYPE]->(entity)
+                ON CREATE SET rel.type = $relationshipType, rel.created_at = timestamp()
+            """
+        }
 
-        merge_keyword_node_query = """
-        MERGE (keyword:Keyword {name: $keyword})
-        ON CREATE SET keyword.Embedding = $embedding
-        RETURN keyword
-        """
+        constraints = [
+            "CREATE CONSTRAINT unique_chunk IF NOT EXISTS FOR (c:Chunk) REQUIRE c.chunkId IS UNIQUE",
+            "CREATE CONSTRAINT unique_entity IF NOT EXISTS FOR (e:Entity) REQUIRE e.name IS UNIQUE"
+        ]
 
-        merge_url_node_query = """
-        MERGE (url:URL {name: $url})
-        ON CREATE SET url.Embedding = $embedding
-        RETURN url
-        """
-
-        merge_title_node_query = """
-        MERGE (title:Title {name: $title})
-        ON CREATE SET title.Embedding = $embedding
-        RETURN title
-        """
-
-        create_relationship_query = """
-        MATCH (chunk:Chunk {chunkId: $chunkId}), (entity {name: $entity})
-        MERGE (chunk)-[rel:HAS_ENTITY]->(entity)
-        ON CREATE SET rel.type = $relationshipType
-        """
-
-        self.kg.query("""
-        CREATE CONSTRAINT unique_chunk IF NOT EXISTS 
-            FOR (c:Chunk) REQUIRE c.chunkId IS UNIQUE
-        """)
-
-        self.kg.query("""
-        CREATE CONSTRAINT unique_keyword IF NOT EXISTS 
-            FOR (k:Keyword) REQUIRE k.name IS UNIQUE
-        """)
-
-        self.kg.query("""
-        CREATE CONSTRAINT unique_url IF NOT EXISTS 
-            FOR (u:URL) REQUIRE u.name IS UNIQUE
-        """)
-
-        self.kg.query("""
-        CREATE CONSTRAINT unique_title IF NOT EXISTS 
-            FOR (t:Title) REQUIRE t.name IS UNIQUE
-        """)
+        for constraint in constraints:
+            self.kg.query(constraint)
 
         node_count = 0
         relationship_count = 0
@@ -104,59 +104,47 @@ class Neo4JChat:
             chunk_embedding = self.embed_text(doc['text'])
             doc['embedding'] = chunk_embedding
 
-            print(f"Creating `:Chunk` node for chunk ID {doc['id']}")
-            self.kg.query(merge_chunk_node_query, params={'chunkParam': doc})
+            logging.info(f"Creating `:Chunk` node for chunk ID {
+                         doc['chunkId']}")
+            self.kg.query(merge_queries['chunk'], params=doc)
             node_count += 1
 
-            # Handle keywords
-            for keyword in doc['keywords']:
-                keyword = keyword.strip()
-                keyword_embedding = self.embed_text(keyword)
-                print(f"Creating `:Keyword` node for keyword {keyword}")
-                self.kg.query(merge_keyword_node_query, params={
-                              'keyword': keyword, 'embedding': keyword_embedding})
+            entities = {
+                'keywords': 'HAS_KEYWORD',
+                'url': 'SOURCED_FROM',
+                'title': 'TALKS_ABOUT'
+            }
 
-                print(f"Creating relationship for chunk ID {
-                      doc['id']} to keyword {keyword}")
-                self.kg.query(create_relationship_query, params={
-                    'chunkId': doc['id'],
-                    'entity': keyword,
-                    'relationshipType': 'HAS_KEYWORD'
-                })
-                relationship_count += 1
+            for entity_type, relationship_type in entities.items():
+                entity_values = doc[entity_type]
+                if entity_type == 'keywords':
+                    for value in entity_values:
+                        value_embedding = self.embed_text(value)
+                        logging.info(
+                            f"Creating `:Entity` node for keyword {value}")
+                        self.kg.query(merge_queries['entity'], params={
+                                      'name': value, 'embedding': value_embedding})
+                        logging.info(f"Creating relationship for chunk ID {
+                                     doc['chunkId']} to keyword {value}")
+                        self.kg.query(merge_queries['relationship'], params={
+                            'chunkId': doc['chunkId'], 'entityName': value, 'relationshipType': relationship_type
+                        })
+                        relationship_count += 1
+                else:
+                    value_embedding = self.embed_text(entity_values)
+                    logging.info(f"Creating `:Entity` node for {
+                                 entity_type} {entity_values}")
+                    self.kg.query(merge_queries['entity'], params={
+                                  'name': entity_values, 'embedding': value_embedding})
+                    logging.info(f"Creating relationship for chunk ID {
+                                 doc['chunkId']} to {entity_type} {entity_values}")
+                    self.kg.query(merge_queries['relationship'], params={
+                        'chunkId': doc['chunkId'], 'entityName': entity_values, 'relationshipType': relationship_type
+                    })
+                    relationship_count += 1
 
-            # Handle URLs
-            url_embedding = self.embed_text(doc['url'])
-            print(f"Creating `:URL` node for URL {doc['url']}")
-            self.kg.query(merge_url_node_query, params={
-                          'url': doc['url'], 'embedding': url_embedding})
-
-            print(f"Creating relationship for chunk ID {
-                  doc['id']} to URL {doc['url']}")
-            self.kg.query(create_relationship_query, params={
-                'chunkId': doc['id'],
-                'entity': doc['url'],
-                'relationshipType': 'SOURCED_FROM'
-            })
-            relationship_count += 1
-
-            # Handle titles
-            title_embedding = self.embed_text(doc['title'])
-            print(f"Creating `:Title` node for title {doc['title']}")
-            self.kg.query(merge_title_node_query, params={
-                          'title': doc['title'], 'embedding': title_embedding})
-
-            print(f"Creating relationship for chunk ID {
-                  doc['id']} to title {doc['title']}")
-            self.kg.query(create_relationship_query, params={
-                'chunkId': doc['id'],
-                'entity': doc['title'],
-                'relationshipType': 'TALKS_ABOUT'
-            })
-            relationship_count += 1
-
-        print(
-            f"Created {node_count} chunk nodes and {relationship_count} relationships with keywords, URLs, and titles")
+        logging.info(f"Created {node_count} chunk nodes and {
+                     relationship_count} relationships with keywords, URLs, and titles")
 
     def similarity_search(self, query):
         # Embed the user query
@@ -164,12 +152,12 @@ class Neo4JChat:
 
         # Query the Neo4j database to find the most relevant chunks
         search_query = """
-                MATCH (chunk:Chunk)
-                WITH chunk, gds.similarity.cosine(chunk.Embedding, $queryEmbedding) AS similarity
-                RETURN chunk, similarity
-                ORDER BY similarity DESC
-                LIMIT 4
-            """
+            MATCH (chunk:Chunk)
+            WITH chunk, gds.similarity.cosine(chunk.embedding, $queryEmbedding) AS similarity
+            RETURN chunk, similarity
+            ORDER BY similarity DESC
+            LIMIT 4
+        """
 
         results = self.kg.query(search_query, params={
                                 'queryEmbedding': query_embedding})
@@ -180,14 +168,19 @@ class Neo4JChat:
             chunk = result['chunk']
             similarity = result['similarity']
             document = Document(
-                page_content=chunk['Text'],
+                page_content=chunk['text'],
                 metadata={
-                    'url': chunk['URL'],
-                    'title': chunk['Title'],
-                    'keywords': chunk['Keywords'],
+                    'url': chunk['url'],
+                    'title': chunk['title'],
+                    'keywords': chunk['keywords'],
                     'similarity': similarity
                 }
             )
             response.append(document)
 
         return response
+
+
+# Instantiate and run the Neo4JChat class
+neo = Neo4JChat()
+print(neo.similarity_search("explain how functions work"))

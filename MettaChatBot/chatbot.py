@@ -14,59 +14,33 @@ client = MongoClient("mongodb://localhost:27017/")
 
 
 class Chat:
-    def __init__(self, db='vec_db', model='phi3:mini'):
-        # Uses psycopg3!
-        self.connection = "postgresql+psycopg://langchain:langchain@localhost:6024/langchain"
+    def __init__(self, model='llama3.1'):
         self.name = "metta"
         self.embeddings = OllamaEmbeddings(model="nomic-embed-text")
-        self.vectorstore = PGVector(
-            embeddings=self.embeddings,
-            collection_name=self.name,
-            connection=self.connection,
-            use_jsonb=True,
-        )
         self.model_name = model
         self.llm = Ollama(model=self.model_name)
         self.neo = Neo4JChat()
-        self.db = db
         self.database = client["metta_chatbot"]
         self.collection = self.database["chat_history"]
-
-    def load_data(self):
-        df = pd.read_csv("data.csv")
-        print(df.head())
-        docs = []
-        for index, row in df.iterrows():
-            print(f"Processing chunk {index + 1}/{len(df)}")
-            docs.append(
-                Document(
-                    page_content=str(row["Text"]),
-                    metadata={
-                        "id": index, "url": row["URL"], "title": row["Title"], "keywords": row["Keywords"]},
-                )
-            )
-
-        self.vectorstore.add_documents(
-            docs, ids=[doc.metadata["id"] for doc in docs])
+        self.session_chat = list()
 
     def query_db(self, query):
-        if self.db == 'vec_db':
-            # Conduct a vector search for the user query and return the top 2 results
-            context = self.vectorstore.similarity_search(query, k=2)
-        else:
-            context = self.neo.similarity_search(query)
+        context = self.neo.similarity_search(query)
 
-        # Custom prompt template suitable for the Phi-3 model
-        qna_prompt_template = """<|system|> You have been provided with the context and a query, try to find out
-        the answer to the question only using the context information, and give answer. If the answer to the question is not found
-        within the context, return "I dont know" as the response. <|end|> <|user|> Context: {context}
+        qna_prompt_template = """<|system|> You have been provided with a technical documentation, previous chat history and a query, try to find out 
+        the answer to the question only using the information from the documentation and history. If the answer to the question is not found 
+        within the documentation, return "I dont know" as the response.
+
+        Documentation: {context}
+        
+        history: {session_history}
 
         Query: {query}<|end|>
         <|assistant|>"""
 
         # Use the custom prompt template to create a prompt and pass the required variables
         prompt = PromptTemplate(
-            template=qna_prompt_template, input_variables=["context", "query"]
+            template=qna_prompt_template, input_variables=["context", "session_history", "query"]
         )
 
         # Define the QNA chain
@@ -74,17 +48,15 @@ class Chat:
 
         # Invoke the chain with the context and query
         answer = (chain.invoke(
-            {"input_documents": context, "query": query}, return_only_outputs=True, ))['output_text']
+            {"input_documents": context, "session_history": self.session_chat, "query": query}, return_only_outputs=True, ))['output_text']
 
         # Extract the answer from the response
         answer = (answer.split("<|assistant|>")[-1]).strip()
 
         # Store the chat history in the MongoDB database
         self.collection.insert_one(
-            {"vector_db": self.db, "model": self.model_name, "query": query, "answer": answer})
+            {"model": self.model_name, "query": query, "answer": answer})
+
+        self.session_chat.append({"query": query, "answer": answer})
 
         return answer
-
-
-chat = Chat("neo4j", model='llama3.1')
-print(chat.query_db("create custom 'List' data structure in metta"))
