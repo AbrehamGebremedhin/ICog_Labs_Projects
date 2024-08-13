@@ -36,7 +36,7 @@ class Neo4JChat:
         node_count = 0
         relationship_count = 0
 
-        for index, row in df.iterrows():
+        for index, row in df[:300].iterrows():
             # Create Anime node with a unique variable name
             anime_var = f"anime_{row['MAL_ID']}"
             self.driver.execute_query(
@@ -58,6 +58,7 @@ class Neo4JChat:
                 genre_var = f"genre_{genre.replace(' ', '_')}"
                 genre_var = f"genre_{genre_var.replace('-', '_')}"
                 genre_var = f"genre_{genre_var.replace('.', '_')}"
+                genre_var = f"genre_{genre_var.replace('&', '_')}"
 
                 self.driver.execute_query(
                     f"MERGE ({genre_var}:Genre {{name: $name}})", name=genre
@@ -79,6 +80,7 @@ class Neo4JChat:
             type_var = f"type_{show_type.replace(' ', '_')}"
             type_var = f"type_{type_var.replace('-', '_')}"
             type_var = f"type_{type_var.replace('.', '_')}"
+            type_var = f"type_{type_var.replace('&', '_')}"
 
             self.driver.execute_query(
                 f"MERGE ({type_var}:Type {{name: $name}})", name=show_type
@@ -102,6 +104,7 @@ class Neo4JChat:
                 producer_var = f"producer_{producer.replace(' ', '_')}"
                 producer_var = f"producer_{producer_var.replace('-', '_')}"
                 producer_var = f"producer_{producer_var.replace('.', '_')}"
+                producer_var = f"producer_{producer_var.replace('&', '_')}"
 
                 self.driver.execute_query(
                     f"MERGE ({producer_var}:Producer {{name: $name}})", name=producer
@@ -124,6 +127,8 @@ class Neo4JChat:
                 licensor_var = f"licensor_{licensor.replace(' ', '_')}"
                 licensor_var = f"licensor_{licensor_var.replace('-', '_')}"
                 licensor_var = f"licensor_{licensor_var.replace('.', '_')}"
+                licensor_var = f"licensor_{licensor_var.replace('&', '_')}"
+
                 self.driver.execute_query(
                     f"MERGE ({licensor_var}:Licensor {{name: $name}})", name=licensor
                 )
@@ -145,6 +150,8 @@ class Neo4JChat:
                 studio_var = f"studio_{studio.replace(' ', '_')}"
                 studio_var = f"studio_{studio_var.replace('-', '_')}"
                 studio_var = f"studio_{studio_var.replace('.', '_')}"
+                studio_var = f"studio_{studio_var.replace('&', '_')}"
+
                 self.driver.execute_query(
                     f"MERGE ({studio_var}:Studio {{name: $name}})", name=studio
                 )
@@ -165,6 +172,8 @@ class Neo4JChat:
             source_var = f"source_{source.replace(' ', '_')}"
             source_var = f"source_{source_var.replace('-', '_')}"
             source_var = f"source_{source_var.replace('.', '_')}"
+            source_var = f"source_{source_var.replace('&', '_')}"
+
             self.driver.execute_query(
                 f"MERGE ({source_var}:Source {{name: $name}})", name=source
             )
