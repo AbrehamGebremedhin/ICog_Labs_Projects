@@ -3,7 +3,6 @@ import pandas as pd
 from langchain_core.documents import Document
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
-from langchain_postgres.vectorstores import PGVector
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.llms import Ollama
 from pymongo import MongoClient
@@ -28,7 +27,7 @@ class Chat:
         context = self.neo.similarity_search(query)
 
         qna_prompt_template = """<|system|> You have been provided with a technical documentation, previous chat history and a query, try to find out 
-        the answer to the question only using the information from the documentation and history. If the answer to the question is not found 
+        the answer to the question only using the information from the documentation and history. After giving the answer give an exact source of the information. Don't include the history in the answer. If the answer to the question is not found 
         within the documentation, return "I dont know" as the response.
 
         Documentation: {context}

@@ -53,7 +53,7 @@ class Neo4JChat:
         return self.embedder.embed_query(text)
 
     def load_data(self):
-        df = pd.read_csv("data.csv")
+        df = pd.read_csv("data.csv")  # Update the path to use the uploaded file
 
         docs = []
         for index, row in df.iterrows():
@@ -64,7 +64,7 @@ class Neo4JChat:
                     "text": str(row["Text"]),
                     "url": row["URL"],
                     "title": row["Title"],
-                    "keywords": [kw.strip() for kw in row["Keywords"].split(',')]
+                    "keywords": list(set([kw.strip() for kw in row["Keywords"].split(',')]))  # Remove duplicates
                 }
             )
 
@@ -83,7 +83,8 @@ class Neo4JChat:
                 ON CREATE SET entity.embedding = $embedding
             """,
             "relationship": """
-                MATCH (chunk:Chunk {chunkId: $chunkId}), (entity:Entity {name: $entityName})
+                MATCH (chunk:Chunk {chunkId: $chunkId})
+                OPTIONAL MATCH (entity:Entity {name: $entityName})
                 MERGE (chunk)-[rel:RELATIONSHIP_TYPE]->(entity)
                 ON CREATE SET rel.type = $relationshipType, rel.created_at = timestamp()
             """
@@ -104,8 +105,7 @@ class Neo4JChat:
             chunk_embedding = self.embed_text(doc['text'])
             doc['embedding'] = chunk_embedding
 
-            logging.info(f"Creating `:Chunk` node for chunk ID {
-                         doc['chunkId']}")
+            logging.info(f"Creating `:Chunk` node for chunk ID {doc['chunkId']}")
             self.kg.query(merge_queries['chunk'], params=doc)
             node_count += 1
 
@@ -120,31 +120,24 @@ class Neo4JChat:
                 if entity_type == 'keywords':
                     for value in entity_values:
                         value_embedding = self.embed_text(value)
-                        logging.info(
-                            f"Creating `:Entity` node for keyword {value}")
-                        self.kg.query(merge_queries['entity'], params={
-                                      'name': value, 'embedding': value_embedding})
-                        logging.info(f"Creating relationship for chunk ID {
-                                     doc['chunkId']} to keyword {value}")
+                        logging.info(f"Creating `:Entity` node for keyword {value}")
+                        self.kg.query(merge_queries['entity'], params={'name': value, 'embedding': value_embedding})
+                        logging.info(f"Creating relationship for chunk ID {doc['chunkId']} to keyword {value}")
                         self.kg.query(merge_queries['relationship'], params={
                             'chunkId': doc['chunkId'], 'entityName': value, 'relationshipType': relationship_type
                         })
                         relationship_count += 1
                 else:
                     value_embedding = self.embed_text(entity_values)
-                    logging.info(f"Creating `:Entity` node for {
-                                 entity_type} {entity_values}")
-                    self.kg.query(merge_queries['entity'], params={
-                                  'name': entity_values, 'embedding': value_embedding})
-                    logging.info(f"Creating relationship for chunk ID {
-                                 doc['chunkId']} to {entity_type} {entity_values}")
+                    logging.info(f"Creating `:Entity` node for {entity_type} {entity_values}")
+                    self.kg.query(merge_queries['entity'], params={'name': entity_values, 'embedding': value_embedding})
+                    logging.info(f"Creating relationship for chunk ID {doc['chunkId']} to {entity_type} {entity_values}")
                     self.kg.query(merge_queries['relationship'], params={
                         'chunkId': doc['chunkId'], 'entityName': entity_values, 'relationshipType': relationship_type
                     })
                     relationship_count += 1
 
-        logging.info(f"Created {node_count} chunk nodes and {
-                     relationship_count} relationships with keywords, URLs, and titles")
+        logging.info(f"Created {node_count} chunk nodes and {relationship_count} relationships with keywords, URLs, and titles")
 
     def similarity_search(self, query):
         # Embed the user query
@@ -159,8 +152,7 @@ class Neo4JChat:
             LIMIT 4
         """
 
-        results = self.kg.query(search_query, params={
-                                'queryEmbedding': query_embedding})
+        results = self.kg.query(search_query, params={'queryEmbedding': query_embedding})
 
         # Extract relevant information from the results
         response = []
@@ -179,8 +171,3 @@ class Neo4JChat:
             response.append(document)
 
         return response
-
-
-# Instantiate and run the Neo4JChat class
-neo = Neo4JChat()
-print(neo.similarity_search("explain how functions work"))
