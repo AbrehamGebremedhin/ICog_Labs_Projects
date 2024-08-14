@@ -1,6 +1,6 @@
 from rest_framework import status
 from Chatbot.models import ChatSession, ChatMessage
-from Chatbot.serializers import SessionSerializer, MesssageSerializer
+from Chatbot.serializers import SessionSerializer, MessageSerializer
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -12,7 +12,7 @@ class SessionList(APIView):
     """
     List of all user sessions, or create a new session.
     """
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         sessions = ChatSession.objects.filter(user=self.request.user)
@@ -22,7 +22,7 @@ class SessionList(APIView):
     def post(self, request):
         serializer = SessionSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=self.request.use)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -31,7 +31,7 @@ class SessionDetail(APIView):
     """
     Retrieve, update or delete a session instance.
     """
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -56,9 +56,16 @@ class MessageList(APIView):
     """
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk):
+    def get(self, request, pk=None):
+        if pk is None:
+            # Create a new chat session with the authenticated user
+            new_session = ChatSession.objects.create(user=request.user)
+            serializer = SessionSerializer(new_session)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # Retrieve messages for the given session
         messages = ChatMessage.objects.filter(session=pk)
-        serializer = MesssageSerializer(messages, many=True)
+        serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
 
     def post(self, request):

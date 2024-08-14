@@ -39,7 +39,8 @@ class Chat:
 
         # Use the custom prompt template to create a prompt and pass the required variables
         prompt = PromptTemplate(
-            template=qna_prompt_template, input_variables=["context", "session_history", "query"]
+            template=qna_prompt_template, input_variables=[
+                "context", "session_history", "query"]
         )
 
         # Define the QNA chain

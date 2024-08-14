@@ -5,10 +5,12 @@ from .models import ChatMessage, ChatSession
 class SessionSerializer(ModelSerializer):
     class Meta:
         model = ChatSession
-        fields = '__all__'
+        # Include other fields as necessary
+        fields = ['id', 'user', 'session_name']
+        read_only_fields = ['user']
 
 
-class MesssageSerializer(ModelSerializer):
+class MessageSerializer(ModelSerializer):
     class Meta:
         model = ChatMessage
         fields = '__all__'
