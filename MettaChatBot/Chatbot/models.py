@@ -4,11 +4,11 @@ from django.db import models
 
 
 class ChatSession(models.Model):
-    session_id = models.CharField(max_length=255, unique=True)
     user = models.ForeignKey(
         'auth.User', on_delete=models.CASCADE)  # the human user
     # name of the chatbot or system
     system_name = models.CharField(max_length=255)
+    session_name = models.CharField(max_length=255)
     timestamp = models.DateTimeField(auto_now_add=True)
 
 

@@ -20,9 +20,10 @@ class SessionList(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        request.data['system_name'] = "llama 3.1"
         serializer = SessionSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=self.request.use)
+            serializer.save(user=self.request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -59,9 +60,11 @@ class MessageList(APIView):
     def get(self, request, pk=None):
         if pk is None:
             # Create a new chat session with the authenticated user
-            new_session = ChatSession.objects.create(user=request.user)
-            serializer = SessionSerializer(new_session)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            serializer = SessionSerializer(
+                data={"session_name": self.request.data["content"], "system_name": "llama 3.1"})
+            if serializer.is_valid():
+                serializer.save(user=self.request.user)
+                pk = serializer.data["id"]
 
         # Retrieve messages for the given session
         messages = ChatMessage.objects.filter(session=pk)
