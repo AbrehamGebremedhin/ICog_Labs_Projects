@@ -5,9 +5,13 @@ from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from chatbot import Chat
 
+chat = Chat()
 
 # Create your views here.
+
+
 class SessionList(APIView):
     """
     List of all user sessions, or create a new session.
@@ -40,13 +44,19 @@ class SessionDetail(APIView):
         except ChatSession.DoesNotExist:
             raise Http404
 
+    def get_messages(self, pk):
+        try:
+            return ChatMessage.objects.filter(session=pk)
+        except ChatMessage.DoesNotExist:
+            raise Http404
+
     def get(self, request, pk):
-        session = self.get_object(pk)
-        serializer = SessionSerializer(session)
+        messages = self.get_messages(pk)
+        serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
 
     def delete(self, request, pk):
-        session = self.get_object(pk)
+        session = self.get_message(pk)
         session.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -57,25 +67,27 @@ class MessageList(APIView):
     """
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk=None):
-        if pk is None:
-            # Create a new chat session with the authenticated user
-            serializer = SessionSerializer(
-                data={"session_name": self.request.data["content"], "system_name": "llama 3.1"})
-            if serializer.is_valid():
-                serializer.save(user=self.request.user)
-                pk = serializer.data["id"]
-
+    def get(self, request, pk):
         # Retrieve messages for the given session
         messages = ChatMessage.objects.filter(session=pk)
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = SessionSerializer(data=request.data)
+        serializer = MessageSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            chat_response = chat.query_db(serializer.data['content'])
+            response_data = {
+                'content': chat_response,
+                'session': serializer.data['session'],
+                'sender_type': 'SYSTEM'
+            }
+            message_serializer = MessageSerializer(data=response_data)
+            if message_serializer.is_valid():
+                message_serializer.save()
+                return Response(message_serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

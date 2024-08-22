@@ -1,14 +1,30 @@
 import React, { useState } from 'react';
 
 function Login({ onLogin }) {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSubmit = (e) => {
+  const setCookie = (name, value) => {
+    document.cookie = `${name}=${value};path=/`;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // Placeholder login logic
-    onLogin();
-  };
+    const data = {
+      "username": username,
+      "password": password
+    }
+
+    await fetch("http://127.0.0.1:8000/api/token/",{
+        method: "POST",
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        }).then(res => res.json()).then(d => setCookie('token',d.access))
+        onLogin();
+    }
 
   return (
     <div className="flex justify-center items-center h-screen">
@@ -16,10 +32,10 @@ function Login({ onLogin }) {
         <h2 className="text-2xl font-bold mb-4">Login</h2>
         <form onSubmit={handleSubmit}>
           <input
-            type="email"
+            type="text"
             placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="w-full p-2 mb-4 border rounded"
             required
           />
