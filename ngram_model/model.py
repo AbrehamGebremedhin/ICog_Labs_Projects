@@ -2,6 +2,64 @@ import numpy as np
 from collections import defaultdict
 
 
+def read_file(file_path):
+    """
+    Reads the content of a file and returns it as a string.
+
+    Args:
+        file_path (str): The path to the file to read.
+
+    Returns:
+        str: The content of the file as a single string.
+
+    Example:
+        text = read_file('sample_train.txt')
+    """
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return file.read()
+
+
+def tokenize_text(text):
+    """
+    Tokenizes the input text into words by splitting on whitespace.
+
+    Args:
+        text (str): The input text to be tokenized.
+
+    Returns:
+        list: A list of words (tokens) from the input text.
+
+    Example:
+        tokens = tokenize_text("This is an example text.")
+        # Output: ['This', 'is', 'an', 'example', 'text.']
+    """
+    return text.split()
+
+
+def build_ngrams(words, n):
+    """
+    Builds n-grams from a list of words.
+
+    An n-gram is a contiguous sequence of n words from the text. This function generates all possible
+    n-grams from the list of words and returns them as a list of tuples.
+
+    Args:
+        words (list of str): A list of words (tokens) from the text.
+        n (int): The number of words in each n-gram.
+
+    Returns:
+        list of tuples: A list of n-grams, where each n-gram is represented as a tuple of words.
+
+    Example:
+        ngrams = build_ngrams(['I', 'love', 'coding', 'in', 'Python'], 3)
+        # Output: [('I', 'love', 'coding'), ('love', 'coding', 'in'), ('coding', 'in', 'Python')]
+    """
+    ngrams = []
+    for i in range(len(words) - n + 1):
+        ngrams.append(tuple(words[i:i + n]))
+    return ngrams
+
+
 def build_ngram_probabilities(ngrams):
     """
     Builds a probabilistic n-gram model from a list of n-grams.
