@@ -24,10 +24,11 @@ class Chat:
         self.session_chat = list()
 
     def query_db(self, query):
+        
         context = self.neo.similarity_search(query)
 
         qna_prompt_template = """<|system|> You have been provided with a technical documentation, previous chat history and a query, try to find out 
-        the answer to the question only using the information from the documentation and history. After giving the answer give the source URL of the information. Don't include the history in the answer. If the answer to the question is not found 
+        the answer to the question only using the information from the documentation and history. Also give the source URL of the information. Don't include the history in the answer. If the answer to the question is not found 
         within the documentation, return "I dont know" as the response. The response should be in HTML format.
 
         Documentation: {context}
