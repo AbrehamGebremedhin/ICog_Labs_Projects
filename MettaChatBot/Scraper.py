@@ -37,7 +37,7 @@ class Scraper:
         self.url_stack = [url]
         self.base_url = url
         self.base_domain = urlparse(url).netloc
-        self.visited_urls = ["https://metta-lang.dev/docs/playground/playground.html"]
+        self.visited_urls = []
         self.links = list()
         self.soup = None
 
@@ -60,7 +60,7 @@ class Scraper:
                 title = link.text
                 # Prefix relative URLs with the base URL
                 if href.startswith('/'):
-                    href = "https://metta-lang.dev" + href
+                    href = "https://www.rejuve.bio/" + href
                 # Skip external links not belonging to the base domain
                 elif href.startswith('http') or href.startswith('https') and urlparse(href).netloc != self.base_domain:
                     continue
@@ -72,7 +72,8 @@ class Scraper:
                         # Fetch the content of the link
                         response = driver(href)
                         soup = BeautifulSoup(response, 'html.parser')
-                        ul_tags = soup.find_all('ul', class_="VPDocOutlineItem root")
+                        ul_tags = soup.find_all(
+                            'ul', class_="VPDocOutlineItem root")
                         # Try to find the main content in <main> or <article> tags
                         soup = soup.find('main') or soup.find('article', soup)
 
@@ -104,7 +105,8 @@ class Scraper:
                                 code.replace_with('')
                             # Update the <pre> tag with modified content
                             pre_text = pre.get_text(separator=' ', strip=True)
-                            pre.string = f"{pre_text} {concatenated_code_texts}"
+                            pre.string = f"{pre_text} {
+                                concatenated_code_texts}"
 
                         # Get the modified text of the whole document
                         text = soup.get_text(separator='\n', strip=True)
@@ -116,7 +118,8 @@ class Scraper:
                             # Loop through and print each <li> tag
                             for li in li_tags:
                                 keywords.append(li.text)
-                        data.append({"URL": href, "Text": text, 'Title': title, "Keywords": keywords})
+                        data.append({"URL": href, "Text": text,
+                                    'Title': title, "Keywords": keywords})
 
                     except Exception as e:
                         # Log any exceptions encountered during processing
@@ -142,5 +145,5 @@ class Scraper:
             return df
 
 
-scrape = Scraper("https://metta-lang.dev/docs/learn/learn.html")
+scrape = Scraper("https://www.rejuve.bio/")
 print(scrape.structured())
