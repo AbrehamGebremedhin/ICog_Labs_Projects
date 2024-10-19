@@ -1,14 +1,15 @@
 import os
-import PyPDF2
 import logging
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+import numpy as np
 import pandas as pd
-from pathlib import Path
+from keybert import KeyBERT
 from dotenv import load_dotenv
-from langchain_community.graphs import Neo4jGraph
-from langchain_community.embeddings import OllamaEmbeddings
-from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
+from langchain_ollama import OllamaEmbeddings
+from langchain_community.graphs import Neo4jGraph
+from sklearn.metrics.pairwise import cosine_similarity
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # Load environment variables
 load_dotenv(r'D:\Projects\ICog_Labs_Projects\rejuve\config.env')
@@ -153,6 +154,8 @@ class Neo4JChat:
                      relationship_count} relationships with keywords, URLs, and titles")
 
     def load_pdf(self, pdf_path):
+        kw_model = KeyBERT()
+
         # Load the PDF file
         loader = PyPDFLoader(pdf_path, extract_images=False)
 
@@ -179,7 +182,11 @@ class Neo4JChat:
         for index, chunk in enumerate(chunks):
             logging.info(f"Processing chunk {index + 1}/{len(chunks)}")
             # Generate embedding for the chunk
-            chunk_embedding = self.embed_text(chunk)
+            chunk_embedding = self.embed_text(str(chunk))
+
+            # Extract keywords for the chunk
+            keywords = kw_model.extract_keywords(
+                str(chunk), keyphrase_ngram_range=(1, 2), stop_words='english')
 
             # Add default metadata (could be updated later if needed)
             docs.append(
@@ -189,7 +196,7 @@ class Neo4JChat:
                     "embedding": chunk_embedding,
                     "url": "https://www.rejuve.bio/_files/ugd/6135b4_e34170afbd574df5b24ab1eef9e3b31a.pdf",
                     "title": "rejuve bio",
-                    "keywords": []
+                    "keywords": [kw[0] for kw in keywords]
                 }
             )
 
@@ -277,36 +284,53 @@ class Neo4JChat:
         # Embed the user query
         query_embedding = self.embed_text(query)
 
-        # Query the Neo4j database to find the most relevant chunks
-        search_query = """
+        # Fetch all chunk embeddings from the Neo4j database
+        fetch_embeddings_query = """
             MATCH (chunk:Chunk)
-            WITH chunk, gds.similarity.cosine(chunk.embedding, $queryEmbedding) AS similarity
-            RETURN chunk, similarity
-            ORDER BY similarity DESC
-            LIMIT 4
+            RETURN chunk.chunkId AS chunkId, chunk.text AS text, chunk.embedding AS embedding, 
+                chunk.url AS url, chunk.title AS title, chunk.keywords AS keywords
         """
 
-        results = self.kg.query(search_query, params={
-                                'queryEmbedding': query_embedding})
+        results = self.kg.query(fetch_embeddings_query)
 
-        # Extract relevant information from the results
-        response = []
+        # Prepare embeddings and metadata for similarity calculation
+        embeddings = []
+        metadata = []
         for result in results:
-            chunk = result['chunk']
-            similarity = result['similarity']
+            embeddings.append(result['embedding'])
+            metadata.append({
+                'chunkId': result['chunkId'],
+                'text': result['text'],
+                'url': result['url'],
+                'title': result['title'],
+                'keywords': result['keywords']
+            })
+
+        # Convert embeddings and query_embedding to numpy arrays
+        embeddings = np.array(embeddings)
+        query_embedding = np.array(query_embedding).reshape(1, -1)
+
+        # Compute cosine similarity between query embedding and chunk embeddings
+        similarities = cosine_similarity(query_embedding, embeddings).flatten()
+
+        # Sort the results by similarity score in descending order
+        sorted_indices = np.argsort(-similarities)
+        top_results = sorted_indices[:4]  # Get the top 4 results
+
+        # Create response documents
+        response = []
+        for index in top_results:
+            doc_metadata = metadata[index]
+            similarity_score = similarities[index]
             document = Document(
-                page_content=chunk['text'],
+                page_content=doc_metadata['text'],
                 metadata={
-                    'url': chunk['url'],
-                    'title': chunk['title'],
-                    'keywords': chunk['keywords'],
-                    'similarity': similarity
+                    'url': doc_metadata['url'],
+                    'title': doc_metadata['title'],
+                    'keywords': doc_metadata['keywords'],
+                    'similarity': similarity_score
                 }
             )
             response.append(document)
 
         return response
-
-
-neo = Neo4JChat()
-print(neo.similarity_search(query="who is the CEO?"))
