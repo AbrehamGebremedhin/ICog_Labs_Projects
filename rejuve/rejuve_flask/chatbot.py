@@ -113,3 +113,23 @@ class Chat:
         """
         if hasattr(self.db_manager, 'close'):
             self.db_manager.close()
+
+async def main():
+    chat_graph = Chat(db_type='graph')
+    chat_vector = Chat(db_type='vector')
+
+    query = "a function to check a give year is a leap year or not in metta"
+    
+    print("Using Neo4j:")
+    answer_graph = await chat_graph.query_db(query)
+    print(answer_graph)
+
+    # Close connections
+    chat_graph.close()
+    chat_vector.close()
+
+asyncio.run(main())
+
+# asyncio.run(print(Chat().query_db("print hello world code")))
+# asyncio.run(print(Chat().query_db("a function to check a give year is a leap year or not")))
+

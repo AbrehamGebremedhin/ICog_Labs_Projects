@@ -24,16 +24,21 @@ class Vec_Astradb:
         loader = PyPDFLoader(file_path, extract_images=False)
         pages = loader.load()
 
-        # Instead of chunking, treat each page as a separate document
-        documents = []
-        for page in pages:
-            metadata = {
-                "source": page.metadata.get("source"),
-                "page": page.metadata.get("page"),
-                "start_index": page.metadata.get("start_index"),
-                # Add other attributes as needed
-            }
-            documents.append({"text": page.page_content, "metadata": metadata})
+        # Calculate chunk size based on document length, e.g., 10% of document length
+        chunk_size = max(200, int(len(pages) * 0.1))
+
+        # Calculate chunk overlap based on chunk size, e.g., 5% of chunk size
+        chunk_overlap = int(chunk_size * 0.05)
+
+        # Split data into chunks
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            length_function=len,
+            add_start_index=True,
+        )
+
+        chunks = text_splitter.split_documents(pages)
 
         vstore = AstraDBVectorStore(
             collection_name="Rejuve_Chat",
@@ -43,7 +48,7 @@ class Vec_Astradb:
             collection_vector_service_options=self.nvidia_vectorize_options,
         )
 
-        inserted_ids = vstore.add_documents(documents)
+        inserted_ids = vstore.add_documents(chunks)
         print(f"\nInserted {len(inserted_ids)} documents.")
 
     def similarity_search(self, query: str, k_value: int = 6):

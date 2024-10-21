@@ -1,11 +1,13 @@
 from dotenv import load_dotenv
 import os
+import numpy as np
 import pandas as pd
 from langchain_community.graphs import Neo4jGraph
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_core.documents import Document
 from pathlib import Path
 import logging
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Load environment variables
 load_dotenv(Path(__file__).resolve().parents[1] / 'config.env')
@@ -182,3 +184,57 @@ class Neo4JChat:
             response.append(document)
 
         return response
+    def similarity_search(self, query):
+            # Embed the user query
+            query_embedding = self.embed_text(query)
+
+            # Fetch all chunk embeddings from the Neo4j database
+            fetch_embeddings_query = """
+                MATCH (chunk:Chunk)
+                RETURN chunk.chunkId AS chunkId, chunk.text AS text, chunk.embedding AS embedding, 
+                    chunk.url AS url, chunk.title AS title, chunk.keywords AS keywords
+            """
+
+            results = self.kg.query(fetch_embeddings_query)
+
+            # Prepare embeddings and metadata for similarity calculation
+            embeddings = []
+            metadata = []
+            for result in results:
+                embeddings.append(result['embedding'])
+                metadata.append({
+                    'chunkId': result['chunkId'],
+                    'text': result['text'],
+                    'url': result['url'],
+                    'title': result['title'],
+                    'keywords': result['keywords']
+                })
+
+            # Convert embeddings and query_embedding to numpy arrays
+            embeddings = np.array(embeddings)
+            query_embedding = np.array(query_embedding).reshape(1, -1)
+
+            # Compute cosine similarity between query embedding and chunk embeddings
+            similarities = cosine_similarity(query_embedding, embeddings).flatten()
+
+            # Sort the results by similarity score in descending order
+            sorted_indices = np.argsort(-similarities)
+            top_results = sorted_indices[:4]  # Get the top 4 results
+
+            # Create response documents
+            response = []
+            for index in top_results:
+                doc_metadata = metadata[index]
+                similarity_score = similarities[index]
+                document = Document(
+                    page_content=doc_metadata['text'],
+                    metadata={
+                        'url': doc_metadata['url'],
+                        'title': doc_metadata['title'],
+                        'keywords': doc_metadata['keywords'],
+                        'similarity': similarity_score
+                    }
+                )
+                response.append(document)
+
+            return response

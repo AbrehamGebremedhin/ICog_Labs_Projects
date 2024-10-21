@@ -61,3 +61,6 @@ class Chat:
         self.session_chat.append({"query": query, "answer": answer})
 
         return answer
+
+chat = Chat()
+print(chat.query_db("print hello world"))

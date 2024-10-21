@@ -37,7 +37,7 @@ class Scraper:
         self.url_stack = [url]
         self.base_url = url
         self.base_domain = urlparse(url).netloc
-        self.visited_urls = []
+        self.visited_urls = ['https://metta-lang.dev/docs/playground/playground.html']
         self.links = list()
         self.soup = None
 
@@ -60,7 +60,7 @@ class Scraper:
                 title = link.text
                 # Prefix relative URLs with the base URL
                 if href.startswith('/'):
-                    href = "https://www.rejuve.bio/" + href
+                    href = "https://metta-lang.dev" + href
                 # Skip external links not belonging to the base domain
                 elif href.startswith('http') or href.startswith('https') and urlparse(href).netloc != self.base_domain:
                     continue
@@ -114,7 +114,10 @@ class Scraper:
                         for ul in ul_tags:
                             # Find all <li> tags within the current <ul> tag
                             li_tags = ul.find_all('li')
-
+                            # Extract text from <a> tags within the <li>
+                            for a in li.find_all('a'):
+                                a_text = a.get_text(separator=' ', strip=True)
+                                a.replace_with(a_text)
                             # Loop through and print each <li> tag
                             for li in li_tags:
                                 keywords.append(li.text)
@@ -133,17 +136,17 @@ class Scraper:
 
     def structured(self):
         data = self.find_all()
-        if self.output_type != "structured":
-            with 'output.txt', 'a' as f:
-                for item in data:
-                    f.write(f"{item['Text']}\n")
-                    f.write("\n")
-            return data
-        else:
-            df = pd.DataFrame(data)
-            df.to_csv("data.csv", index=False)
-            return df
+        # if self.output_type != "structured":
+        #     with 'output.txt', 'a' as f:
+        #         for item in data:
+        #             f.write(f"{item['Text']}\n")
+        #             f.write("\n")
+        #     return data
+        # else:
+        df = pd.DataFrame(data)
+        df.to_csv("data.csv", index=False)
+        return df
 
 
-scrape = Scraper("https://www.rejuve.bio/")
+scrape = Scraper("https://metta-lang.dev/docs/learn/learn.html")
 print(scrape.structured())
