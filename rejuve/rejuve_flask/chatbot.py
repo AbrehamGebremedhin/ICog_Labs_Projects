@@ -115,17 +115,15 @@ class Chat:
             self.db_manager.close()
 
 async def main():
-    chat_graph = Chat(db_type='graph')
     chat_vector = Chat(db_type='vector')
 
-    query = "a function to check a give year is a leap year or not in metta"
+    query = "explain what rejuve is "
     
     print("Using Neo4j:")
-    answer_graph = await chat_graph.query_db(query)
+    answer_graph = await chat_vector.query_db(query)
     print(answer_graph)
 
     # Close connections
-    chat_graph.close()
     chat_vector.close()
 
 asyncio.run(main())
