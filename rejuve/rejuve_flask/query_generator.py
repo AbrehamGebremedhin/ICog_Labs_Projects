@@ -57,9 +57,9 @@ class Neo4jDatabase:
         return sample_data
 
 class LangchainToCypher:
-    def __init__(self, neo4j_db):
+    def __init__(self):
         self.llm = OllamaLLM(model="llama3.1")
-        self.neo4j_db = neo4j_db
+        self.neo4j_db = Neo4jDatabase()
 
     def _format_sample_data(self, sample_data):
         formatted_samples = []
@@ -75,7 +75,7 @@ class LangchainToCypher:
 
         sample_queries = {
             "Get all genes with a specific type": 
-                "MATCH (g:gene {gene_type: 'protein_coding'}) RETURN g.gene_name",
+                "MATCH (g:gene {gene_type: 'protein_coding'}) RETURN g",
 
             "Get all transcripts associated with a specific gene": 
                 "MATCH (g:gene {gene_name: 'BRCA1'})-[:transcribed_to]->(t:transcript) RETURN t",
@@ -141,6 +141,7 @@ class LangchainToCypher:
         You are an expert in translating natural language to Cypher queries for a Neo4j database containing a biological dataset. Generate ONLY the Cypher query without any explanations or markdown formatting.
 
         Database Schema:
+        - Graph: {self.neo4j_db}
         - Nodes: {', '.join(self.neo4j_db.labels)}
         - Relationships: {', '.join(self.neo4j_db.relationships)}
         - Properties: {', '.join(self.neo4j_db.property_keys)}
@@ -152,34 +153,26 @@ class LangchainToCypher:
         {sample_queries}
         
         Rules for query generation:
-        1. Return ONLY the Cypher query - no explanations, no markdown
-        2. Use double quotes for string literals
-        3. Keep the query simple and direct
-        4. Do not include any comments or additional text
-        5. Do not wrap the query in backticks
+        1. Include related nodes and relationships where applicable.
+        2. Only use MATCH and RETURN clauses
+        3. Return ONLY the Cypher query - no explanations, no markdown
+        4. Use double quotes for string literals
+        5. Keep the query simple and direct
+        6. Do not include any comments or additional text
+        7. Do not wrap the query in backticks
         
         User Request: {user_input}
         """
         
-        response = self.llm(prompt)
+        response = self.llm.invoke(prompt)
+
         return response
+    
+    def run_query(self, query):
+        cypher_query = self.generate_cypher_query(query)
 
-def main():
-    # Initialize Neo4j database connection
-    neo4j_db = Neo4jDatabase()
+        result = self.neo4j_db.execute_query(cypher_query)
 
-    # Initialize Langchain with Ollama and pass neo4j_db instance
-    langchain_to_cypher = LangchainToCypher(neo4j_db)
+        self.neo4j_db.close()
 
-    # User input example
-    user_input = "Find all genes of type 'processed_pseudogene' and return their names."
-
-    # Generate Cypher query using LangChain
-    cypher_query = langchain_to_cypher.generate_cypher_query(user_input)
-    print(f"Generated Cypher Query: {cypher_query}")
-
-    # Close the Neo4j connection
-    neo4j_db.close()
-
-if __name__ == "__main__":
-    main()
+        return result

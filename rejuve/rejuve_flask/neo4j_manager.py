@@ -334,7 +334,3 @@ class Neo4JChat:
             response.append(document)
 
         return response
-
-
-neo = Neo4JChat()
-print(neo.similarity_search("cancer"))
