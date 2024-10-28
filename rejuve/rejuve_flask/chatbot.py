@@ -71,7 +71,7 @@ class Chat:
                 context_text = str(context)
             context = [Document(page_content=context_text)]
 
-            prompt_template = """<|system|> You are an assistant proficient in explaining any biological information that can be extracted from biological data from Rejuve.Bio's BioAtomspace knowledge graph using your own knowledge base. Based on the context, provide an elaborate explanation."
+            prompt_template = """<|system|> You are an assistant proficient in explaining any biological information that can be extracted from biological data from Rejuve.Bio's BioAtomspace knowledge graph using your own knowledge base. Based on the context, provide an elaborate explanation of all the biological data of the context."
 
             IMPORTANT: You must format your response as a single-line JSON string with no line breaks, no extra spaces, and no escaped characters. The format should be exactly like this: {{"answer":"Your answer here"}}
 
