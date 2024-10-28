@@ -5,6 +5,7 @@ from langchain_astradb import AstraDBVectorStore
 from astrapy.info import CollectionVectorServiceOptions
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.schema import Document
 
 
 class Vec_Astradb:
@@ -51,7 +52,78 @@ class Vec_Astradb:
         inserted_ids = vstore.add_documents(chunks)
         print(f"\nInserted {len(inserted_ids)} documents.")
 
-    def similarity_search(self, query: str, k_value: int = 6):
+    def populate_from_csv(self, csv_path, chunk_size=500, chunk_overlap=50):
+        """
+        Loads data from a CSV file into the vector database.
+        The 'Text' column is used as the document content, while other columns become metadata.
+        Text content is split into smaller chunks to meet token size requirements.
+        
+        Args:
+            csv_path (str): Path to the CSV file
+            chunk_size (int): Maximum size of text chunks
+            chunk_overlap (int): Number of characters to overlap between chunks
+        """
+        print(f"Loading CSV data from {csv_path}...")
+        
+        try:
+            # Read the CSV file
+            df = pd.read_csv(csv_path)
+            
+            # Ensure 'Text' column exists
+            if 'Text' not in df.columns:
+                raise ValueError("CSV must contain a 'Text' column")
+            
+            # Initialize text splitter
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap,
+                length_function=len,
+                add_start_index=True,
+            )
+            
+            # Create and split documents with metadata
+            all_documents = []
+            for _, row in df.iterrows():
+                # Convert the row to a dictionary and remove the 'Text' field
+                metadata = row.drop('Text').to_dict()
+                
+                # Handle potential list-like strings in metadata
+                for key, value in metadata.items():
+                    if isinstance(value, str) and value.startswith('[') and value.endswith(']'):
+                        try:
+                            # Convert string representation of list to actual list
+                            metadata[key] = eval(value)
+                        except:
+                            # Keep as string if conversion fails
+                            pass
+                
+                # Create a Document object
+                doc = Document(
+                    page_content=row['Text'],
+                    metadata=metadata
+                )
+                
+                # Split the document into chunks
+                chunks = text_splitter.split_documents([doc])
+                all_documents.extend(chunks)
+            
+            # Initialize vector store
+            vstore = AstraDBVectorStore(
+                collection_name="Rejuve_Chat",
+                api_endpoint=self.astra_db_api_endpoint,
+                token=self.astra_db_application_token,
+                namespace=None,
+                collection_vector_service_options=self.nvidia_vectorize_options,
+            )
+            
+            # Add documents to the vector store
+            inserted_ids = vstore.add_documents(all_documents)
+            print(f"\nSplit text into {len(all_documents)} chunks and inserted them into the database.")
+            
+        except Exception as e:
+            raise RuntimeError(f"Error loading CSV data: {e}")
+
+    def similarity_search(self, query: str, k_value: int = 10):
         """Queries the vector database and returns results"""
         try:
             vec_db = AstraDBVectorStore(
@@ -68,3 +140,4 @@ class Vec_Astradb:
             return results
         except Exception as e:
             raise RuntimeError(f"Error querying database: {e}")
+        
