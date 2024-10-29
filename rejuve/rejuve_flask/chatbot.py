@@ -71,17 +71,27 @@ class Chat:
                 context_text = str(context)
             context = [Document(page_content=context_text)]
 
-            prompt_template = """<|system|> You are an assistant proficient in explaining any biological information that can be extracted from biological data from Rejuve.Bio's BioAtomspace knowledge graph using your own knowledge base. Based on the context, provide an elaborate explanation, significance and any other important information of all the biological data of the context."
+            prompt_template = """
+                <|system|> You are an assistant proficient in explaining biological information extracted from Rejuve.Bio's BioAtomspace knowledge graph. Your task is to provide detailed explanations, exploration, significance, and other essential insights related to the provided biological context based on the knowledge graph data that was provided.
 
-            IMPORTANT: You must format your response as a single-line JSON string with no line breaks, no extra spaces, and no escaped characters. The format should be exactly like this: {{"answer":"Your answer here"}}
+                IMPORTANT: Your response must be formatted as a single-line JSON string without line breaks or escaped characters. The format should be exactly like this: {{"answer":"Your answer here"}}
 
-            Database Results:  
-            {context}  
+                Database Results:  
+                {context}  
 
-            Previous Context:  
-            {session_history}  
+                Contextual Instructions: 
+                - Identify key biological entities (e.g., genes, transcripts, proteins).
+                - If there are relationships, explain their biological roles or interactions.
+                - If only nodes are present, focus on their key properties, such as biological functions, significance, chromosomal location, or any notable characteristics.
+                - Highlight relevant findings such as known roles in biological processes, diseases, or interactions with other entities.
+                - If applicable, elaborate on hierarchical relationships or known gene expressions and their implications.
 
-            <|assistant|>"""
+                Previous Context:  
+                {session_history}  
+
+                <|assistant|>
+
+            """
         else:
             prompt_template = """<|system|> You have been provided with a documentation, previous chat history and a query, try to find out 
             the answer to the question only using the information from the documentation and history. Make the answer an elaborate one.

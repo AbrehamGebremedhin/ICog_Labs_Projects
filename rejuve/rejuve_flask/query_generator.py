@@ -168,6 +168,71 @@ class LangchainToCypher:
 
         return response
     
+    def annotation_service_format(self, query):
+
+        json_format = {
+            "requests": { # An object containing the nodes and predicates arrays.
+                "nodes": [ # (Mandatory) A list of node objects that define the nodes to query.
+                    {
+                        "node_id": "n1", # (Mandatory) A unique identifier for the node within the query context.
+                        "id": "", # (Mandatory Key, Optional Value) The key id must be present and can contain either an Ensemble ID or a HUGO ID. Its value can be an empty string if you do not have a specific identifier.
+                        "type": "gene", # (Mandatory) The type of the node (gene, transcript, enhancer, exon, pathway, promoter, protein, snp and super_enhancer).
+                        "properties": {
+                            "gene_type": "protein_coding" # (Mandatory key) A dictionary of properties to match for the node. The specific properties required depend on the node type.
+                        }
+                    },
+                    {
+                        "node_id": "n2", # (Mandatory) A unique identifier for the node within the query context.
+                        "id": "", # (Mandatory Key, Optional Value) The key id must be present and can contain either an Ensemble ID or a HUGO ID. Its value can be an empty string if you do not have a specific identifier.
+                        "type": "transcript", # (Mandatory) The type of the node (gene, transcript, enhancer, exon, pathway, promoter, protein, snp and super_enhancer).
+                        "properties": {} # (Mandatory key) A dictionary of properties to match for the node. The specific properties required depend on the node type.
+                    }
+                    ],
+                    "predicates": [ # (Optional) A list of relationship objects (edges) that define the relationships to query between the nodes.
+                    {
+                        "type": "transcribed to", # (Mandatory) The type of relationship (e.g., transcribed to, translates_to, associated_with, includes, transcribed_from, translation_of).
+                        "source": "n1", # (Mandatory) The node_id of the source node in the relationship.
+                        "target": "n2" # (Mandatory) The node_id of the target node in the relationship.
+                    }
+                ]
+            }
+        }
+
+        prompt = f"""
+            You are an expert in translating natural language to a JSON format for an annotation service that queries a biological database. Generate the JSON format based on the user query.
+            
+            Database Schema:
+            - Nodes: {', '.join(self.neo4j_db.labels)}
+            - Relationships: {', '.join(self.neo4j_db.relationships)}
+            - Properties: {', '.join(self.neo4j_db.property_keys)}
+
+            JSON Format: {json_format}
+
+            User Request: {query}
+
+            Rules for JSON generation:
+
+            1. Include the nodes and predicates arrays.
+
+            2. Define the nodes with unique node_id, type, and properties.
+
+            3. Define the predicates with type, source, and target.
+
+            4. Use double quotes for string literals.
+
+            5. Keep the JSON format simple and direct.
+
+            6. Do not include any comments or additional text.
+
+            7. Do not wrap the JSON in backticks.
+
+      
+        """
+
+        response = self.llm.invoke(prompt)
+
+        return response
+    
     def run_query(self, query):
         cypher_query = self.generate_cypher_query(query)
 
@@ -176,3 +241,8 @@ class LangchainToCypher:
         self.neo4j_db.close()
 
         return result
+
+lang = LangchainToCypher()
+query = "Get all genes with a 'processed_pseudogene' type and their proteins"
+result = lang.annotation_service_format(query)
+print(result)
