@@ -198,13 +198,104 @@ class LangchainToCypher:
             }
         }
 
+        nodes = [
+            "enhancer",
+            "exon",
+            "gene",
+            "pathway",
+            "promoter",
+            "protein",
+            "snp",
+            "super_enhancer",
+            "transcript"
+        ]
+
+        relationship_mapping = [
+            "'super_enhancer' to 'gene' have 'associated_with' relationship",
+            "'promoter' to 'gene' have 'associated_with' relationship",
+            "'transcript' to 'exon' have 'includes' relationship",
+            "'transcript' to 'gene' have 'transcribed_from' relationship",
+            "'gene' to 'transcript' have 'transcribed_to' relationship",
+            "'transcript' to 'protein' have 'translates_to' relationship",
+            "'protein' to 'transcript' have 'translation_of' relationship"
+        ]
+
+        property_keys = {
+            "enhancer_property_keys": [
+                "id", 
+                "start", 
+                "end", 
+                "chr"
+            ],
+            "exon_property_keys": [
+                "id", 
+                "start", 
+                "end", 
+                "chr", 
+                "exon_number", 
+                "exon_id"
+            ],
+            "gene_property_keys": [
+                "id", 
+                "gene_name", 
+                "gene_type", 
+                "synonyms", 
+                "start", 
+                "end", 
+                "chr"
+            ],
+            "pathway_property_keys": [
+                "id",
+                "pathway_name"
+            ],
+            "promoter_property_keys": [
+                "id", 
+                "start", 
+                "end", 
+                "chr"
+            ],
+            "protein_property_keys": [
+                "id", 
+                "protein_name", 
+                "accessions"
+            ],
+            "snp_property_keys": [
+                "id", 
+                "start", 
+                "end", 
+                "chr", 
+                "ref", 
+                "caf_ref", 
+                "alt", 
+                "caf_alt"
+            ],
+            "superhancer_property_keys": [
+                "id", 
+                "start", 
+                "end", 
+                "chr", 
+                "se_id"
+            ],
+            "transcript_property_keys": [
+                "id", 
+                "start",
+                "end", 
+                "chr", 
+                "transcript_id", 
+                "transcript_name", 
+                "transcript_type", 
+                "label"
+            ]
+
+        }
+
         prompt = f"""
             You are an expert in translating natural language to a JSON format for an annotation service that queries a biological database. Generate the JSON format based on the user query.
             
             Database Schema:
-            - Nodes: {', '.join(self.neo4j_db.labels)}
-            - Relationships: {', '.join(self.neo4j_db.relationships)}
-            - Properties: {', '.join(self.neo4j_db.property_keys)}
+            - Nodes: {nodes}
+            - Relationships: {relationship_mapping}
+            - Properties: {property_keys}
 
             JSON Format: {json_format}
 
@@ -243,6 +334,10 @@ class LangchainToCypher:
         return result
 
 lang = LangchainToCypher()
-query = "Get all genes with a 'processed_pseudogene' type and their proteins"
-result = lang.annotation_service_format(query)
+# query = "Get all genes with a 'processed_pseudogene' type and their proteins"
+# result = lang.annotation_service_format(query)
+# print(result)
+
+query = "List all enhancers in the knowledge base"
+result = lang.run_query(query)
 print(result)
