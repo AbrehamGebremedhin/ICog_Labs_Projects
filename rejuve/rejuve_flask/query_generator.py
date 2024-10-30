@@ -1,7 +1,10 @@
 import os
+import json
+import requests
 from dotenv import load_dotenv
 from neo4j import GraphDatabase
 from langchain_ollama import OllamaLLM
+from langchain_core.output_parsers import JsonOutputParser
 
 load_dotenv(r'D:\Projects\ICog_Labs_Projects\rejuve\config.env')
 
@@ -167,9 +170,22 @@ class LangchainToCypher:
         response = self.llm.invoke(prompt)
 
         return response
-    
-    def annotation_service_format(self, query):
+        
+    def run_query(self, query):
+        cypher_query = self.generate_cypher_query(query)
 
+        result = self.neo4j_db.execute_query(cypher_query)
+
+        self.neo4j_db.close()
+
+        return result
+    
+class NaturalToAnnotation:
+    def __init__(self):
+        self.llm = OllamaLLM(model="llama3.1")
+        self.parser = JsonOutputParser()
+
+    def annotation_service_format(self, query):
         json_format = {
             "requests": { # An object containing the nodes and predicates arrays.
                 "nodes": [ # (Mandatory) A list of node objects that define the nodes to query.
@@ -309,9 +325,9 @@ class LangchainToCypher:
 
             3. Define the predicates with type, source, and target.
 
-            4. Use double quotes for string literals.
+            4. Use double quotes for all variables and their corresponding values.
 
-            5. Keep the JSON format simple and direct.
+            5. Return ONLY the Cypher query - no explanations, no markdown.
 
             6. Do not include any comments or additional text.
 
@@ -322,22 +338,23 @@ class LangchainToCypher:
 
         response = self.llm.invoke(prompt)
 
-        return response
-    
+        print(response)
+
+        formatted_response = self.parser.parse(response)
+
+        return formatted_response
+
     def run_query(self, query):
-        cypher_query = self.generate_cypher_query(query)
+        request = self.annotation_service_format(query)
 
-        result = self.neo4j_db.execute_query(cypher_query)
+        print(request)
 
-        self.neo4j_db.close()
+        response = requests.post("http://127.0.0.1:5000/query?properties=true&limit=10", data=request, headers={'Content-Type': 'application/json'})
 
-        return result
+        if response.status_code == 200:
+            data = response.json()
 
-lang = LangchainToCypher()
-# query = "Get all genes with a 'processed_pseudogene' type and their proteins"
-# result = lang.annotation_service_format(query)
-# print(result)
-
-query = "List all enhancers in the knowledge base"
-result = lang.run_query(query)
-print(result)
+            return data
+        
+annot = NaturalToAnnotation()
+print(annot.run_query("Retrieve a list of all transcripts available."))
