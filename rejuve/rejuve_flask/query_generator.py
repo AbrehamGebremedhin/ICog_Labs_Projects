@@ -184,37 +184,7 @@ class NaturalToAnnotation:
     def __init__(self):
         self.llm = OllamaLLM(model="llama3.1")
         self.parser = JsonOutputParser()
-
-    def annotation_service_format(self, query):
-        json_format = {
-            "requests": { # An object containing the nodes and predicates arrays.
-                "nodes": [ # (Mandatory) A list of node objects that define the nodes to query.
-                    {
-                        "node_id": "n1", # (Mandatory) A unique identifier for the node within the query context.
-                        "id": "", # (Mandatory Key, Optional Value) The key id must be present and can contain either an Ensemble ID or a HUGO ID. Its value can be an empty string if you do not have a specific identifier.
-                        "type": "gene", # (Mandatory) The type of the node (gene, transcript, enhancer, exon, pathway, promoter, protein, snp and super_enhancer).
-                        "properties": {
-                            "gene_type": "protein_coding" # (Mandatory key) A dictionary of properties to match for the node. The specific properties required depend on the node type.
-                        }
-                    },
-                    {
-                        "node_id": "n2", # (Mandatory) A unique identifier for the node within the query context.
-                        "id": "", # (Mandatory Key, Optional Value) The key id must be present and can contain either an Ensemble ID or a HUGO ID. Its value can be an empty string if you do not have a specific identifier.
-                        "type": "transcript", # (Mandatory) The type of the node (gene, transcript, enhancer, exon, pathway, promoter, protein, snp and super_enhancer).
-                        "properties": {} # (Mandatory key) A dictionary of properties to match for the node. The specific properties required depend on the node type.
-                    }
-                    ],
-                    "predicates": [ # (Optional) A list of relationship objects (edges) that define the relationships to query between the nodes.
-                    {
-                        "type": "transcribed to", # (Mandatory) The type of relationship (e.g., transcribed to, translates_to, associated_with, includes, transcribed_from, translation_of).
-                        "source": "n1", # (Mandatory) The node_id of the source node in the relationship.
-                        "target": "n2" # (Mandatory) The node_id of the target node in the relationship.
-                    }
-                ]
-            }
-        }
-
-        nodes = [
+        self.nodes = [
             "enhancer",
             "exon",
             "gene",
@@ -226,7 +196,7 @@ class NaturalToAnnotation:
             "transcript"
         ]
 
-        relationship_mapping = [
+        self.relationship_mapping = [
             "'super_enhancer' to 'gene' have 'associated_with' relationship",
             "'promoter' to 'gene' have 'associated_with' relationship",
             "'transcript' to 'exon' have 'includes' relationship",
@@ -236,7 +206,7 @@ class NaturalToAnnotation:
             "'protein' to 'transcript' have 'translation_of' relationship"
         ]
 
-        property_keys = {
+        self.property_keys = {
             "enhancer_property_keys": [
                 "id", 
                 "start", 
@@ -305,13 +275,43 @@ class NaturalToAnnotation:
 
         }
 
+
+    def annotation_service_format(self, query):
+        json_format = {
+            "requests": { # An object containing the nodes and predicates arrays.
+                "nodes": [ # (Mandatory) A list of node objects that define the nodes to query.
+                    {
+                        "node_id": "n1", # (Mandatory) A unique identifier for the node within the query context.
+                        "id": "", # (Mandatory Key, Optional Value) The key id must be present and can contain either an Ensemble ID or a HUGO ID. Its value can be an empty string if you do not have a specific identifier.
+                        "type": "gene", # (Mandatory) The type of the node (gene, transcript, enhancer, exon, pathway, promoter, protein, snp and super_enhancer).
+                        "properties": {
+                            "gene_type": "protein_coding" # (Mandatory key) A dictionary of properties to match for the node. The specific properties required depend on the node type.
+                        }
+                    },
+                    {
+                        "node_id": "n2", # (Mandatory) A unique identifier for the node within the query context.
+                        "id": "", # (Mandatory Key, Optional Value) The key id must be present and can contain either an Ensemble ID or a HUGO ID. Its value can be an empty string if you do not have a specific identifier.
+                        "type": "transcript", # (Mandatory) The type of the node (gene, transcript, enhancer, exon, pathway, promoter, protein, snp and super_enhancer).
+                        "properties": {} # (Mandatory key) A dictionary of properties to match for the node. The specific properties required depend on the node type.
+                    }
+                    ],
+                    "predicates": [ # (Optional) A list of relationship objects (edges) that define the relationships to query between the nodes.
+                    {
+                        "type": "transcribed to", # (Mandatory) The type of relationship (e.g., transcribed to, translates_to, associated_with, includes, transcribed_from, translation_of).
+                        "source": "n1", # (Mandatory) The node_id of the source node in the relationship.
+                        "target": "n2" # (Mandatory) The node_id of the target node in the relationship.
+                    }
+                ]
+            }
+        }
+
         prompt = f"""
             You are an expert in translating natural language to a JSON format for an annotation service that queries a biological database. Generate the JSON format based on the user query.
             
             Database Schema:
-            - Nodes: {nodes}
-            - Relationships: {relationship_mapping}
-            - Properties: {property_keys}
+            - Nodes: {self.nodes}
+            - Relationships: {self.relationship_mapping}
+            - Properties: {self.property_keys}
 
             JSON Format: {json_format}
 
@@ -327,7 +327,7 @@ class NaturalToAnnotation:
 
             4. Use double quotes for all variables and their corresponding values.
 
-            5. Return ONLY the Cypher query - no explanations, no markdown.
+            5. Return ONLY the JSON - no explanations, no markdown.
 
             6. Do not include any comments or additional text.
 
@@ -338,8 +338,6 @@ class NaturalToAnnotation:
 
         response = self.llm.invoke(prompt)
 
-        print(response)
-
         formatted_response = self.parser.parse(response)
 
         return formatted_response
@@ -347,14 +345,10 @@ class NaturalToAnnotation:
     def run_query(self, query):
         request = self.annotation_service_format(query)
 
-        print(request)
-
-        response = requests.post("http://127.0.0.1:5000/query?properties=true&limit=10", data=request, headers={'Content-Type': 'application/json'})
+        response = requests.post("http://127.0.0.1:5000/query?properties=true&limit=10", json=request, headers={'Content-Type': 'application/json'})
 
         if response.status_code == 200:
             data = response.json()
 
             return data
         
-annot = NaturalToAnnotation()
-print(annot.run_query("Retrieve a list of all transcripts available."))
