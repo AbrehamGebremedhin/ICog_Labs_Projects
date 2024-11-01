@@ -10,20 +10,20 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import JsonOutputParser
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
-
 load_dotenv('config.env')
 
 class Chat:
     def __init__(self, db_type='graph'):
         """
-        Initialize the Chat class.
-        :param db_type: 'graph' for Neo4j, 'vector' for Vec_Astradb
+        Initialize the Chat class with nodes, relationships, and property keys.
+        :param db_type: 'graph' for Neo4j, 'vector' for Vec_Astradb, or 'annotation' for NaturalToAnnotation
         """
         self.embeddings = None
         self.llm = None
-        self.session_chat = list()
+        self.session_chat = []
         self.db_type = db_type
 
+        # Set the database manager based on db_type
         if self.db_type == 'graph':
             self.db_manager = LangchainToCypher()
         elif self.db_type == "annotation":
@@ -31,9 +31,11 @@ class Chat:
         elif self.db_type == 'vector':
             self.db_manager = Vec_Astradb()
         else:
-            raise ValueError("Invalid db_type. Choose 'graph' or 'vector'.")
+            raise ValueError("Invalid db_type. Choose 'graph', 'annotation', or 'vector'.")
+
         self.parser = JsonOutputParser()
 
+        # Define nodes, relationships, and property keys
         self.nodes = [
             "enhancer",
             "exon",
@@ -57,74 +59,16 @@ class Chat:
         ]
 
         self.property_keys = {
-            "enhancer_property_keys": [
-                "id", 
-                "start", 
-                "end", 
-                "chr"
-            ],
-            "exon_property_keys": [
-                "id", 
-                "start", 
-                "end", 
-                "chr", 
-                "exon_number", 
-                "exon_id"
-            ],
-            "gene_property_keys": [
-                "id", 
-                "gene_name", 
-                "gene_type", 
-                "synonyms", 
-                "start", 
-                "end", 
-                "chr"
-            ],
-            "pathway_property_keys": [
-                "id",
-                "pathway_name"
-            ],
-            "promoter_property_keys": [
-                "id", 
-                "start", 
-                "end", 
-                "chr"
-            ],
-            "protein_property_keys": [
-                "id", 
-                "protein_name", 
-                "accessions"
-            ],
-            "snp_property_keys": [
-                "id", 
-                "start", 
-                "end", 
-                "chr", 
-                "ref", 
-                "caf_ref", 
-                "alt", 
-                "caf_alt"
-            ],
-            "superhancer_property_keys": [
-                "id", 
-                "start", 
-                "end", 
-                "chr", 
-                "se_id"
-            ],
-            "transcript_property_keys": [
-                "id", 
-                "start",
-                "end", 
-                "chr", 
-                "transcript_id", 
-                "transcript_name", 
-                "transcript_type", 
-                "label"
-            ]
-
+            "enhancer_property_keys": ["id", "start", "end", "chr"],
+            "exon_property_keys": ["id", "start", "end", "chr", "exon_number", "exon_id"],
+            "gene_property_keys": ["id", "gene_name", "gene_type", "synonyms", "start", "end", "chr"],
+            "pathway_property_keys": ["id", "pathway_name"],
+            "promoter_property_keys": ["id", "start", "end", "chr"],
+            "protein_property_keys": ["id", "protein_name", "accessions"],
+            "snp_property_keys": ["id", "start", "end", "chr", "ref", "caf_ref", "alt", "caf_alt"],
+            "superhancer_property_keys": ["id", "start", "end", "chr", "se_id"],
+            "transcript_property_keys": ["id", "start", "end", "chr", "transcript_id", "transcript_name", "transcript_type", "label"]
         }
-
 
     def load_embeddings(self):
         if self.embeddings is None:
@@ -136,9 +80,6 @@ class Chat:
 
     @lru_cache(maxsize=128)
     def cached_similarity_search(self, query):
-        """
-        Perform a similarity search using the selected database manager.
-        """
         if self.db_type == 'graph':
             return self.db_manager.run_query(query)
         elif self.db_type == "annotation":
@@ -146,90 +87,84 @@ class Chat:
         elif self.db_type == 'vector':
             return self.db_manager.similarity_search(query)
 
-    def query_db(self, query):
-        """
-        Query the selected database and get a response from the LLM.
-        """
-        self.load_embeddings()
-        self.load_llm()
-
-        # Perform similarity search
-        context = self.cached_similarity_search(query)
-
-        # Ensure context is not empty
-        if not context:
-            return {"answer": "No relevant documents found."}
-        
+    def create_prompt_template(self):
         if self.db_type == 'graph':
-            if isinstance(context, list):
-                context_text = "\n".join([str(item) for item in context])
-            else:
-                context_text = str(context)
-            context = [Document(page_content=context_text)]
-
             prompt_template = """
-                <|system|> You are an expert biology assistant tasked with analyzing graph data to answer specific questions. Your task is to provide detailed explanations, exploration, significance, and other essential insights related to the provided biological context based on the knowledge graph data that was provided.
+                <|system|> You are an expert in explaining biological information extracted from Rejuve.Bio's BioAtomspace knowledge graph. Based on the provided database context, describe the biological roles, relationships, and functions in a meaningful summary without explicitly including structural details.
 
-                IMPORTANT: Your response must be formatted as a single-line JSON string without line breaks or escaped characters. The format should be exactly like this: {{"answer":"Your answer here"}}
+                IMPORTANT: Format your response as a single-line JSON string, without line breaks or escaped characters, like this: {{"answer":"Your answer here"}}
 
                 Database Results:  
                 {context}  
 
-                User query:
-                {query}
+                Reference Information (For understanding only; exclude from response):
+                - Nodes: {nodes}
+                - Relationships: {relationship_mapping}
+                - Property Keys: {property_keys}
 
-                Contextual Instructions: 
-                - Identify key biological entities. Here are all the nodes {nodes}.
-                - If there are relationships, explain their biological roles or interactions. Here are all the relationships between the nodes {relationships}.
-                - If only nodes are present, focus on their key properties, such as biological functions, significance, chromosomal location, or any notable characteristics. Here are the property keys of each node {propertyKeys}.                - Highlight relevant findings such as known roles in biological processes, diseases, or interactions with other entities.
-                - If applicable, elaborate on hierarchical relationships or known gene expressions and their implications.
-                - Start with: 'The graph shows: '
+                Contextual Instructions:
+                - Summarize gene functions, protein synthesis, transcription, and regulatory roles.
+                - Describe any diseases associated with this gene, including known genetic disorders or phenotypes.
+                - Mention connections to diseases, specific pathways, and relevant biological processes.
+                - Include details about the gene's role in disease pathology if mutations or expressions are involved.
+                - If available, summarize related studies or known genetic markers for disease predisposition.
+                - Describe key biological processes, relationships, and data patterns based on node types and relationships.
+                - Highlight regulatory roles like promoters or enhancers, connections such as "gene to transcript" (transcribed_to), and their biological significance.
+                - Begin with: "The biological data reveals:"
 
-                Previous Context:  
-                {session_history}  
+                Rules for JSON:
+                1. Use double quotes for all variables and values.
+                2. Return ONLY the JSON string without any additional text or comments.
+                3. No line breaks or backticks; respond only with JSON.
 
-                <|assistant|>
-
+                Previous Context:
+                {session_history}
             """
         elif self.db_type == "annotation":
-            if isinstance(context, list):
-                context_text = "\n".join([str(item) for item in context])
-            else:
-                context_text = str(context)
-            context = [Document(page_content=context_text)]
-
             prompt_template = """
-                <|system|> You are an assistant proficient in explaining biological information extracted from Rejuve.Bio's BioAtomspace knowledge graph. Your task is to provide detailed explanations, exploration, significance, and other essential insights related to the provided biological context based on the knowledge graph data that was provided.
+                <|system|> You are an expert in interpreting biological annotations from Rejuve.Bio's BioAtomspace knowledge graph. Using the provided database context, explain the biological functions, roles, and relationships in a clear summary without explicitly including structural details.
 
-                IMPORTANT: Your response must be formatted as a single-line JSON string without line breaks or escaped characters. The format should be exactly like this: {{"answer":"Your answer here"}}
+                IMPORTANT: Format your response as a single-line JSON string, without line breaks or escaped characters, like this: {{"answer":"Your answer here"}}
 
                 Database Results:  
-                {context}
+                {context}  
 
-                User query: 
-                {query}
-  
+                Reference Information (For understanding only; exclude from response):
+                - Nodes: {nodes}
+                - Relationships: {relationship_mapping}
+                - Property Keys: {property_keys}
 
-                Contextual Instructions: 
-                - Identify key biological entities. Here are all the nodes {nodes}.
-                - If there are relationships, explain their biological roles or interactions. Here are all the relationships between the nodes {relationships}.
-                - If only nodes are present, focus on their key properties, such as biological functions, significance, chromosomal location, or any notable characteristics. Here are the property keys of each node {propertyKeys}.
-                - Highlight relevant findings such as known roles in biological processes, diseases, or interactions with other entities.
-                - If applicable, elaborate on hierarchical relationships or known gene expressions and their implications.
-                - Start with: 'The graph shows: '
+                Contextual Instructions:
+                - Describe gene functions, transcript roles, protein synthesis, and associated regulatory elements.
+                - Describe any diseases associated with this gene, including known genetic disorders or phenotypes.
+                - Mention connections to diseases, specific pathways, and relevant biological processes.
+                - Include details about the gene's role in disease pathology if mutations or expressions are involved.
+                - If available, summarize related studies or known genetic markers for disease predisposition.
+                - Highlight annotations around key biological pathways and regulatory mechanisms like promoters and enhancers.
+                - Emphasize connections like "gene to transcript" (transcribed_to) or "transcript to protein" (translates_to) and their biological relevance.
+                - Start with: "The annotations reveal:"
 
-                Previous Context:  
-                {session_history}  
+                Rules for JSON:
+                1. Use double quotes for all variables and values.
+                2. Return ONLY the JSON string without any additional text or comments.
+                3. No line breaks or backticks; respond only with JSON.
 
-                <|assistant|>
-
+                Previous Context:
+                {session_history}
             """
         else:
+            # Use a simple template for vector queries
             prompt_template = """<|system|> You have been provided with a documentation, previous chat history and a query, try to find out 
             the answer to the question only using the information from the documentation and history. Make the answer an elaborate one.
             If the answer to the question is not found within the documentation.
 
             IMPORTANT: You must format your response as a single-line JSON string with no line breaks, no extra spaces, no \\, and no escaped characters. The format should be exactly like this: {{"answer":"Your answer here"}}
+
+            Rules for JSON generation:
+                1. Use double quotes for all variables and their corresponding values.
+                2. Return ONLY the JSON - no explanations, no markdown.
+                3. Do not include any comments or additional text.
+                4. Do not wrap the JSON in backticks.
 
             Documentation: {context}
             
@@ -239,46 +174,50 @@ class Chat:
 
             <|assistant|>"""
 
-        # Create the prompt from the template
-        prompt = PromptTemplate.from_template(prompt_template)
+        return PromptTemplate.from_template(prompt_template)
 
-        # Create the stuff documents chain
-        chain = create_stuff_documents_chain(
-            llm=self.llm,
-            prompt=prompt
-        )
+    def query_db(self, query):
+        self.load_embeddings()
+        self.load_llm()
+
+        # Perform similarity search
+        context = self.cached_similarity_search(query)
+
+        # Ensure context is not empty
+        if not context:
+            return {"answer": "No relevant documents found."}
+
+        # Prepare the context and prompt for the query
+        context_text = "\n".join([str(item) for item in context]) if isinstance(context, list) else str(context)
+        context = [Document(page_content=context_text)]
+        
+        prompt = self.create_prompt_template()
+
+        chain = create_stuff_documents_chain(llm=self.llm, prompt=prompt)
 
         try:
-            # Execute the chain with the input variables
             answer = chain.invoke({
                 "context": context,
                 "session_history": self.session_chat,
                 "query": query,
                 "nodes": self.nodes,
-                "relationships": self.relationship_mapping,
-                "propertyKeys": self.property_keys    
+                "relationship_mapping": self.relationship_mapping,
+                "property_keys": self.property_keys    
             })
 
-            # Extract the answer
-            clean_answer = str(answer.strip())
-            clean_answer.replace("\\", '')
-
+            clean_answer = str(answer.strip()).replace("\\", '')
             parsed_answer = self.parser.parse(clean_answer)
 
-            # Add the query and answer to the session chat history
-            self.session_chat.append({
-                "query": query,
-                "answer": clean_answer
-            })
-
+            self.session_chat.append({"query": query, "answer": clean_answer})
             return parsed_answer
 
         except Exception as e:
             return {"answer": f"Error during processing: {str(e)}"}
 
+
     def close(self):
-        """
-        Close the database connection if applicable.
-        """
         if hasattr(self.db_manager, 'close'):
             self.db_manager.close()
+
+chat = Chat('graph')
+print(chat.query_db("What properties does the gene ensg00000232448 has?"))
