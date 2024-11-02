@@ -1,0 +1,16 @@
+{% extends 'index.html' %} {% block content %}
+<h1>Similar Articles</h1>
+<div id="results">
+  {% if results %} {% for result in results %}
+  <div class="result">
+    <p><strong>Similarity Score:</strong> {{ result.similarity_score }}</p>
+    <p><strong>Keywords:</strong> {{ result.keywords|join:", " }}</p>
+    <p><strong>Document:</strong> {{ result.document }}</p>
+  </div>
+  <hr />
+  {% endfor %} {% else %}
+  <p>No results found.</p>
+  {% endif %}
+</div>
+<a href="{% url 'home' %}">Back to Home</a>
+{% endblock %}

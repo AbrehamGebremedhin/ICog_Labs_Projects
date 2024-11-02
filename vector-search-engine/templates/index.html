@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dog Breed Prediction</title>
+    <style>
+      body {
+        background-color: #f0f0f0;
+        color: #333;
+        font-family: "Arial", sans-serif;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        flex-direction: column;
+      }
+
+      .container {
+        text-align: center;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        width: 100%;
+      }
+
+      h1 {
+        font-size: 2.5em;
+        color: #4caf50; /* Green color */
+        margin-bottom: 20px;
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .custom-file-upload {
+        display: inline-block;
+        background-color: #4caf50; /* Green color */
+        color: #ffffff;
+        padding: 10px 20px;
+        font-size: 1.2em;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+        margin-top: 10px;
+      }
+
+      .custom-file-upload:hover {
+        background-color: #45a049; /* Darker green color */
+      }
+
+      #uploadBtn {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        font-size: 1.2em;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: background-color 0.3s ease;
+      }
+
+      #uploadBtn:hover {
+        background-color: #45a049; /* Darker green color */
+      }
+
+      .form {
+        margin-top: 20px;
+      }
+
+      .layout__body {
+        text-align: center;
+        margin-top: 50px;
+      }
+
+      img {
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 512px;
+        height: auto;
+        margin-top: 20px;
+      }
+
+      label {
+        display: block;
+        margin-top: 10px;
+        font-size: 1.2em;
+        color: #333;
+      }
+
+      .result {
+        background-color: #e0f7fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .result p {
+        margin: 5px 0;
+      }
+
+      hr {
+        border: 0;
+        height: 1px;
+        background: #ddd;
+        margin: 20px 0;
+      }
+
+      a {
+        display: inline-block;
+        margin-top: 20px;
+        text-decoration: none;
+        color: #4caf50;
+        font-size: 1.2em;
+        transition: color 0.3s ease;
+      }
+
+      a:hover {
+        color: #45a049;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">{% block content %} {% endblock %}</div>
+  </body>
+</html>
