@@ -218,6 +218,3 @@ class Chat:
     def close(self):
         if hasattr(self.db_manager, 'close'):
             self.db_manager.close()
-
-chat = Chat('graph')
-print(chat.query_db("What properties does the gene ensg00000232448 has?"))

@@ -278,6 +278,7 @@ class NaturalToAnnotation:
 
     def annotation_service_format(self, query):
         json_format = {
+            # anotation format for 2 nodes with relationship
             "requests": { # An object containing the nodes and predicates arrays.
                 "nodes": [ # (Mandatory) A list of node objects that define the nodes to query.
                     {
@@ -305,6 +306,38 @@ class NaturalToAnnotation:
             }
         }
 
+        annotation_node_without =  { 
+            # anotation format for node without fitering with any node property
+            "requests": {
+                "nodes": [
+                    {
+                        "node_id": "n1", 
+                        "id": "", 
+                        "type": "protein", 
+                        "properties": {}
+                    }
+                ], 
+                "predicates": []
+            }
+        }
+
+        annotation_node_with =  { 
+            # anotation format for node with fitering with node property       
+            "requests": {
+                "nodes": [
+                {
+                    "node_id": "n1",
+                    "id": "",
+                    "type": "gene",
+                    "properties": {
+                    "gene_type": "protein_coding"
+                    }
+                }
+                ],
+                "predicates": []
+            }
+        }
+
         prompt = f"""
             You are an expert in translating natural language to a JSON format for an annotation service that queries a biological database. Generate the JSON format based on the user query.
             
@@ -313,7 +346,11 @@ class NaturalToAnnotation:
             - Relationships: {self.relationship_mapping}
             - Properties: {self.property_keys}
 
-            JSON Format: {json_format}
+            JSON Format for Two nodes with relatioship: {json_format}
+
+            JSON Format for single node without property filtering: {annotation_node_without}
+            
+            JSON Format for single node with property filtering: {annotation_node_with}
 
             User Request: {query}
 
@@ -351,4 +388,3 @@ class NaturalToAnnotation:
             data = response.json()
 
             return data
-        
