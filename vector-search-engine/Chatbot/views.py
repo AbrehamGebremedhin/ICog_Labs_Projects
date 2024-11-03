@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from django.http import JsonResponse
 from vector import Vectorizer
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -10,6 +9,19 @@ vectorizer = Vectorizer()
 
 @csrf_exempt
 def home(request):
+    """
+    Handle the home page view for processing uploaded files and returning similar articles.
+
+    This view handles both GET and POST requests. For POST requests, it processes the uploaded file,
+    extracts similar articles based on the provided query, and returns the results. For GET requests,
+    it simply renders the home page.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+
+    Returns:
+        HttpResponse: The HTTP response object with the rendered template.
+    """
     if request.method == 'POST':
         query = request.POST['query']
         top_result = int(request.POST['top_result'])

@@ -40,6 +40,17 @@ class Vectorizer:
         return text
 
     def load_file(self, file_path):
+        """
+        Load and process a PDF file.
+
+        Args:
+            file_path (str): The path to the PDF file.
+
+        Returns:
+            tuple: A tuple containing two lists:
+                - docs (list of str): The lemmatized text of each page in the PDF.
+                - keywords (list of list of str): The extracted keywords from each page in the PDF.
+        """
         reader = PdfReader(file_path)
         docs = []
         keywords = []
@@ -53,8 +64,22 @@ class Vectorizer:
         keywords = [[word for word, score in keyword_list] for keyword_list in keywords]
 
         return docs, keywords
-    
+
     def get_similar_articles(self, query, top_result, file_path):
+        """
+        Find and return the most similar articles to a query from a PDF file.
+
+        Args:
+            query (str): The query string to search for.
+            top_result (int): The number of top similar results to return.
+            file_path (str): The path to the PDF file.
+
+        Returns:
+            tuple: A tuple containing three elements:
+                - similarity_scores (list of float): The similarity scores of the top results.
+                - docs (list of str): The lemmatized text of each page in the PDF.
+                - keywords (list of list of str): The extracted keywords from each page in the PDF.
+        """
         docs, keywords = self.load_file(file_path)
         X = self.vectorizer.fit_transform(docs)
 

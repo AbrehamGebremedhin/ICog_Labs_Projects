@@ -19,7 +19,7 @@ async def chat():
     if not query:
         return jsonify({"error": "Query is required"}), 400
     
-    if not db_type or db_type not in ['graph', 'vector']:
+    if not db_type or db_type not in ['graph', 'vector', 'annotation']:
         return jsonify({"error": "Invalid or missing db_choice"}), 400
 
     try:
