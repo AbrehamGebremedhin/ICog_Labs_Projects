@@ -277,6 +277,15 @@ class NaturalToAnnotation:
 
 
     def annotation_service_format(self, query):
+        """
+        Formats the user query into the annotation service format.
+
+        Args:
+            query (str): The user query to be formatted.
+
+        Returns:
+            str: The formatted query.
+        """
         json_format = {
             # anotation format for 2 nodes with relationship
             "requests": { # An object containing the nodes and predicates arrays.
@@ -380,6 +389,15 @@ class NaturalToAnnotation:
         return formatted_response
 
     def run_query(self, query):
+        """
+        Executes a query against the annotation service.
+
+        Args:
+            query (str): The user query to be processed.
+
+        Returns:
+            dict: The JSON response from the annotation service if the request is successful.
+        """
         request = self.annotation_service_format(query)
 
         response = requests.post("http://127.0.0.1:5000/query?properties=true&limit=10", json=request, headers={'Content-Type': 'application/json'})
