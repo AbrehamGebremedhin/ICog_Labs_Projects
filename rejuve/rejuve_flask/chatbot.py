@@ -170,8 +170,8 @@ class Chat:
         elif self.db_type == "annotation":
             prompt_template = """
                 <|system|> You are an expert in interpreting biological annotations from Rejuve.Bio's BioAtomspace knowledge graph. Using the provided database context, explain the biological functions, roles, and relationships in a clear summary without explicitly including structural details. 
-                After processing the query, provide a suggestion for the user on further insight to the data by referring to all the node, their respective property keys and relationship of the current node(s) to other nodes. Include relevant the relationships and their respective mapping in the suggestion.
-                IMPORTANT: Format your response as a single-line JSON string, without line breaks or escaped characters, like this: {{"answer":"Your answer here", suggestion: "Your suggestion here"}}
+                After processing the query, provide a suggestion for the user on further insight to the data by referring to all the node, their respective property keys and relationship of the current node(s) to other nodes. Include relevant the relationships and their respective relationship mapping in the suggestion. Based on your suggestion generate suggested queries for the user to explore the data further like {example_queries}.
+                IMPORTANT: Format your response as a single-line JSON string, without line breaks or escaped characters, like this: {{"answer":"Your answer here", suggestion: "Your suggestion here", "queries": ["Your suggested queries here"]}}
 
                 Database Results:  
                 {context}  

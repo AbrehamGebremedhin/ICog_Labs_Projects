@@ -102,18 +102,7 @@ class NaturalToAnnotation:
 
         }
 
-
-    def annotation_service_format(self, query):
-        """
-        Formats the user query into the annotation service format.
-
-        Args:
-            query (str): The user query to be formatted.
-
-        Returns:
-            str: The formatted query.
-        """
-        json_format = """{
+        self.json_format = """{
             # anotation format for 2 nodes with relationship
             "requests": { # An object containing the nodes and predicates arrays.
                 "nodes": [ # (Mandatory) A list of node objects that define the nodes to query.
@@ -139,11 +128,10 @@ class NaturalToAnnotation:
                         "target": "n2" # (Mandatory) The node_id of the target node in the relationship.
                     }
                 ]
-            },
-
+            }
         }"""
 
-        annotation_node_without =  """{ 
+        self.annotation_node_without =  """{ 
             # anotation format for node without fitering with any node property
             "requests": {
                 "nodes": [
@@ -158,7 +146,7 @@ class NaturalToAnnotation:
             }
         }"""
 
-        annotation_node_with =  """{ 
+        self.annotation_node_with =  """{ 
             # anotation format for node with fitering with node property       
             "requests": {
                 "nodes": [
@@ -175,6 +163,18 @@ class NaturalToAnnotation:
             }
         }"""
 
+    def annotation_service_format(self, query):
+        """
+        Formats the user query into the annotation service format.
+
+        Args:
+            query (str): The user query to be formatted.
+
+        Returns:
+            str: The formatted query.
+        """
+
+
         prompt = f"""
             You are an expert in translating natural language to a JSON format for an annotation service that queries a biological database. Generate the JSON format based on the user query.
             
@@ -183,11 +183,11 @@ class NaturalToAnnotation:
             - Relationships: {self.relationship_mapping}
             - Properties: {self.property_keys}
 
-            JSON Format for Two nodes with relatioship: {json_format}
+            JSON Format for Two nodes with relatioship: {self.json_format}
 
-            JSON Format for single node without property filtering: {annotation_node_without}
+            JSON Format for single node without property filtering: {self.annotation_node_without}
             
-            JSON Format for single node with property filtering: {annotation_node_with}
+            JSON Format for single node with property filtering: {self.annotation_node_with}
 
             User Request: {query}
 
@@ -215,6 +215,41 @@ class NaturalToAnnotation:
         formatted_response = self.parser.parse(response)
 
         return formatted_response
+    
+    def request_optimizer(self, request):
+        prompt = f"""
+            You are recieving a JSON request and you are tasks are making sure the request follows this: {self.json_format} and after that making sure all the attributes in the JSON request such property and relationship are in the correct naming using these respectively {self.property_keys} and {self.relationship_mapping}.
+
+            Reference Information (For understanding only; exclude from response):
+                - Nodes: {self.nodes}
+                - Relationships: {self.relationship_mapping}
+                - Property Keys: {self.property_keys}
+
+            JSON Format for Two nodes with relatioship: {self.json_format}
+
+            JSON Format for single node without property filtering: {self.annotation_node_without}
+            
+            JSON Format for single node with property filtering: {self.annotation_node_with}    
+
+            JSON Request: {request}
+
+            Rules for JSON generation:
+            1. Follow the JSON request and if it only fetches one node without relationship or not
+            2. Make sure the nodes are in this: {self.nodes}.
+            3. Correct minor errors such as spelling, and changing all single spaces and - to _  in property and relationship.
+            4. Use double quotes for all variables and their corresponding values.
+            5. Return ONLY the JSON - no explanations, no markdown.
+            6. Do not include any comments or additional text.
+            7. Do not wrap the JSON in backticks.
+
+      
+        """
+                
+        response = self.llm.invoke(prompt)
+
+        formatted_response = self.parser.parse(response)
+
+        return formatted_response
 
     def run_query(self, query):
         """
@@ -237,3 +272,21 @@ class NaturalToAnnotation:
         
         else:
             return f"Error: {response.status_code} - {response.text}"
+
+request = {
+  "requests": {
+    "nodes": [
+      {
+        "node_id": "n1",
+        "id": "",
+        "type": "transript",
+        "properties": {}
+      }
+    ],
+    "predicates": []
+  }
+}
+        
+
+nla = NaturalToAnnotation()
+print(nla.request_optimizer(request))

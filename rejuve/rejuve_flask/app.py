@@ -3,14 +3,6 @@ from chatbot import Chat  # Import the Chat class
 
 app = Flask(__name__)
 
-@app.route('/')
-def home():
-    data = {
-        "message": "Welcome to the Flask API!",
-        "status": "success"
-    }
-    return jsonify(data)
-
 @app.route('/chat', methods=['POST'])
 async def chat():
     query = request.json.get('query')

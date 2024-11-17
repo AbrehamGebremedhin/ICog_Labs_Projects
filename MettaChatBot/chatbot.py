@@ -57,7 +57,7 @@ class Chat:
 
         return vstore
 
-    def search_db(self, query: str, keywords: str = None, k_value: int = 20) -> List[Dict[str, Any]]:
+    def search_db(self, query: str, keywords: str = None, k_value: int = 30) -> List[Dict[str, Any]]:
         """Queries the vector database and returns results without filtering by similarity score"""
         try:
             vec_db = self.select_db()
@@ -115,7 +115,7 @@ class Chat:
 
         # Define the prompt template
         qna_prompt_template = """<|system|> You have been provided with a documentation, previous chat history and a query, try to find out 
-        the answer to the question using the information from the documentation and history and your knowledge base. Make sure to provide an elaborate answer in a single line but make the answer is complete. 
+        the answer to the question using the information from the documentation and history and your knowledge base. Make sure to provide an elaborate answer in a single line but make the answer is complete. If the user request is to generate a metta code, then return only the metta code.
         Output as JSON:
         {{
             "answer": "The answer to the query"
@@ -142,3 +142,7 @@ class Chat:
         
         # Clean the answer
         return self.clean_answer(answer)
+
+
+chat = Chat()
+print(chat.query_db("generate a metta function that accepts a string and prints it"))

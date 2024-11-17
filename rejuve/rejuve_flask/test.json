@@ -1,0 +1,8 @@
+{
+  "requests": {
+    "nodes": [
+      { "node_id": "n1", "id": "", "type": "transcript", "properties": {} }
+    ],
+    "predicates": []
+  }
+}
