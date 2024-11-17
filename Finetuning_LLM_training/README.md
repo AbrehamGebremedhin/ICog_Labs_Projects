@@ -88,7 +88,6 @@ Choose a base model based on:
 
 - **Start with Pre-Trained Models:** Leverage models like GPT-3, BERT, or LLaMA to save time and resources.
 - **Focus on Relevant Data:** Ensure datasets align closely with the target domain or task.
-- **Ethical Compliance:** Avoid bias by using diverse and representative datasets.
 - **Evaluate Early and Often:** Regularly assess performance during training.
 - **Optimize Resources:** Use techniques like LoRA for cost-efficient fine-tuning.
 
