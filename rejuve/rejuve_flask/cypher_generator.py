@@ -135,7 +135,6 @@ class LangchainToCypher:
                 "MATCH (t:transcript {transcript_name: 'lncRNA'}) RETURN t"
         }
 
-        
         # Create a comprehensive prompt using actual database metadata
         prompt = f"""
         You are an expert in translating natural language to Cypher queries for a Neo4j database containing a biological dataset. Generate ONLY the Cypher query without any explanations or markdown formatting.

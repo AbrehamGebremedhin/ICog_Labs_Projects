@@ -27,8 +27,11 @@ class Chat:
             self.db_manager = NaturalToAnnotation()
         elif self.db_type == 'vector':
             self.db_manager = Vec_Astradb()
+
         else:
             raise ValueError("Invalid db_type. Choose 'graph', 'annotation', or 'vector'.")
+
+        self.vector_db = Vec_Astradb()
 
         self.parser = JsonOutputParser()
 
@@ -169,7 +172,7 @@ class Chat:
             """
         elif self.db_type == "annotation":
             prompt_template = """
-                <|system|> You are an expert in interpreting biological annotations from Rejuve.Bio's BioAtomspace knowledge graph. Using the provided database context, explain the biological functions, roles, and relationships in a clear summary without explicitly including structural details. 
+                <|system|> You are an expert in interpreting biological annotations from Rejuve.Bio's BioAtomspace knowledge graph. Using the provided database context and reference genetic data. Use the reference genetic data to explain the biological functions, roles, and relationships in a clear summary without explicitly including structural details. 
                 After processing the query, provide a suggestion for the user on further insight to the data by referring to all the node, their respective property keys and relationship of the current node(s) to other nodes. Include relevant the relationships and their respective relationship mapping in the suggestion. Based on your suggestion generate suggested queries for the user to explore the data further like {example_queries}.
                 IMPORTANT: Format your response as a single-line JSON string, without line breaks or escaped characters, like this: {{"answer":"Your answer here", suggestion: "Your suggestion here", "queries": ["Your suggested queries here"]}}
 
@@ -180,6 +183,7 @@ class Chat:
                 - Nodes: {nodes}
                 - Relationships: {relationship_mapping}
                 - Property Keys: {property_keys}
+                - Genetic Reference Data: {genetic_reference_data}
 
                 Contextual Instructions:
                 - Describe gene functions, transcript roles, protein synthesis, and associated regulatory elements.
@@ -239,7 +243,9 @@ class Chat:
         # Prepare the context and prompt for the query
         context_text = "\n".join([str(item) for item in context]) if isinstance(context, list) else str(context)
         context = [Document(page_content=context_text)]
-        
+
+        genetic_data = self.vector_db.similarity_search(query=context[0].page_content, db_name="Reference_Chat", k_value=10)
+
         prompt = self.create_prompt_template()
 
         chain = create_stuff_documents_chain(llm=self.llm, prompt=prompt)
@@ -253,7 +259,8 @@ class Chat:
                 "relationship_mapping": self.relationship_mapping,
                 "property_keys": self.property_keys,   
                 "preferred_answer_format": self.preffered_answer_format,
-                "example_queries": self.example_queries
+                "example_queries": self.example_queries,
+                "genetic_reference_data": genetic_data
             })
 
             clean_answer = str(answer.strip()).replace("\\", '')

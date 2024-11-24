@@ -1,8 +1,5 @@
-import os
-import json
 import requests
 from dotenv import load_dotenv
-from neo4j import GraphDatabase
 from langchain_ollama import OllamaLLM
 from langchain_core.output_parsers import JsonOutputParser
 
@@ -242,9 +239,8 @@ class NaturalToAnnotation:
             6. Do not include any comments or additional text.
             7. Do not wrap the JSON in backticks.
 
-      
         """
-                
+
         response = self.llm.invoke(prompt)
 
         formatted_response = self.parser.parse(response)
@@ -263,7 +259,7 @@ class NaturalToAnnotation:
         """
         request = self.annotation_service_format(query)
 
-        response = requests.post("http://127.0.0.1:5000/query?properties=true&limit=10", json=request, headers={'Content-Type': 'application/json'})
+        response = requests.post("http://127.0.0.1:5000/query?properties=true&limit=5", json=request, headers={'Content-Type': 'application/json'})
 
         if response.status_code == 200:
             data = response.json()
@@ -272,21 +268,3 @@ class NaturalToAnnotation:
         
         else:
             return f"Error: {response.status_code} - {response.text}"
-
-request = {
-  "requests": {
-    "nodes": [
-      {
-        "node_id": "n1",
-        "id": "",
-        "type": "transript",
-        "properties": {}
-      }
-    ],
-    "predicates": []
-  }
-}
-        
-
-nla = NaturalToAnnotation()
-print(nla.request_optimizer(request))
