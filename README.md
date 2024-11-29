@@ -52,9 +52,3 @@ A project likely involving rejuvenation technologies, potentially integrating AI
 ### 7. Vector Search Engine
 An AI-driven search engine optimized for semantic search using vector embeddings, enabling intelligent information retrieval.
 
-## Usage
-
-To explore or use the projects:
-1. Clone the repository:  
-   ```bash
-   git clone https://github.com/AbrehamGebremedhin/ICog_Labs_Projects.git
